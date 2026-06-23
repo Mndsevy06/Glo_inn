@@ -1,0 +1,37 @@
+**Rôle** : Tu es un développeur Frontend Expert (React, TailwindCSS, Framer Motion) spécialisé dans la conception d'interfaces UI/UX "Premium" et spectaculaires.
+
+**Contexte** : 
+Je te fournis en pièces jointes le Cahier des Charges et le document détaillant les spécifications du Frontend (frontend.txt). Ton objectif est de générer le code complet du frontend de l'application "Pressing Gloria", un système digital "Phygital" innovant pour la gestion et le suivi de commandes d'un pressing.
+
+**Instructions de Design (CRITIQUES) - L'effet "Wow" :**
+1. **Glassmorphism & Effets de Verre Poli** : C'est la signature visuelle du projet. Utilise intensivement les classes Tailwind (`backdrop-blur-md`, `bg-white/10`, bordures translucides, ombres douces) pour les cartes de services, les modales, la barre de navigation et les panneaux du tableau de bord. L'application doit avoir un aspect luxueux et futuriste.
+2. **Thème Dynamique (Dark / Light Mode)** : Implémente un support natif pour les modes sombre et clair. Utilise des palettes de couleurs riches, harmonieuses et profondes, avec des contrastes parfaits.
+3. **Micro-interactions & Animations** : Intègre `framer-motion` (ou des transitions CSS avancées) pour donner vie à l'interface (animations douces au changement de page, effets de survol magnétiques sur les boutons, apparition fluide des toasts/notifications, spinners de chargement élégants).
+4. **Mobile-First & Dashboard** : L'interface client (Menu, Suivi) doit se comporter et ressembler à une application mobile native très fluide. À l'inverse, l'interface du personnel (Gérant/Réceptionniste) doit être un véritable Dashboard panoramique, aéré et ergonomique sur grand écran.
+
+**Ce que tu dois générer (par étapes) :**
+
+**Étape 1 : Architecture & Setup**
+- Définis la structure complète des dossiers React (components, pages, hooks, context, utils).
+- Fournis les configurations nécessaires (`tailwind.config.js`, `index.css` avec les utilitaires globaux de glassmorphism).
+- Liste les dépendances clés à installer (ex: `lucide-react` pour les icônes, `framer-motion`, `clsx`, `tailwind-merge`).
+
+**Étape 2 : Le Design System & Composants Core**
+- Génère les composants de base réutilisables en appliquant strictement l'esthétique Glassmorphism : `GlassCard`, `GlassButton`, `GlassInput`, `Modal`, et un composant de `Toast/Notification`.
+
+**Étape 3 : L'Espace Client (Interface "Phygital")**
+- Génère la vue "Catalogue/Menu" public affichant les services avec de magnifiques images et prix.
+- Génère l'interface de "Suivi de Commande" avec une timeline visuelle (Enregistré -> En cours -> Prêt) animée et claire.
+
+**Étape 4 : L'Espace Personnel (Dashboard Gérant / Réceptionniste)**
+- Génère le `Layout` du Dashboard (Sidebar latérale avec effet Glass, Header avec barre de recherche et cloche de notification).
+- Génère la page "Nouvelle Commande / Caisse" permettant d'ajouter des habits, sélectionner les services, et valider.
+- Génère la page "Liste des Commandes" sous forme de tableau interactif avec des badges de statut colorés.
+
+**Règles Techniques :**
+- Code uniquement avec **React fonctionnel** (Hooks) et **TailwindCSS**.
+- Le backend n'étant pas encore développé, utilise impérativement des **données fictives (Mock Data)** riches et réalistes pour que les interfaces soient directement testables et visuellement complètes (ajoute des fausses commandes, faux clients, faux services).
+- Fournis le code propre, commenté et modulaire.
+
+Lis attentivement le Cahier des Charges joint pour assimiler les règles métiers avant de commencer. 
+Si c'est clair pour toi, commence immédiatement par me fournir l'Étape 1 (Architecture & Setup complet) et l'Étape 2 (Design System et CSS global).

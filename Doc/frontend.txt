@@ -1,0 +1,91 @@
+# SPÉCIFICATIONS DU FRONTEND : PRESSING GLORIA
+
+Ce document décrit en détail l'architecture de l'interface utilisateur (Frontend) de l'application, en définissant les standards de design et le comportement précis de chaque écran.
+
+---
+
+## 1. RÈGLES GÉNÉRALES & DESIGN SYSTEM
+
+### 1.1. Esthétique et "Look & Feel" (Premium & Élégant)
+*   **Mode Sombre / Mode Clair (Dark/Light Mode)** : L'application intégrera un switch fluide entre un mode clair (frais, épuré, dominé par le blanc cassé et des tons pastel rappelant la propreté) et un mode sombre (élégant, fond gris anthracite/noir profond avec des textes contrastés). Le choix de l'utilisateur sera mémorisé.
+*   **Images Haute Qualité (Pexels)** : L'interface sera sublimée par des photos professionnelles (vêtements sur cintre, repassage vapeur, tissus luxueux) tirées de Pexels pour donner un aspect très haut de gamme au menu public et aux bannières de bienvenue.
+*   **Typographie** : Utilisation de polices modernes et lisibles (ex: *Inter*, *Poppins* ou *Outfit*). Les titres seront en gras (Bold) pour marquer l'élégance, et le corps de texte léger pour un confort de lecture optimal.
+*   **Animations et Micro-interactions** : Des transitions fluides (glassmorphism, effets de flou) seront utilisées. Les boutons auront des effets de survol (hover) doux. Lorsqu'une action est accomplie (ex: Paiement réussi), une animation de validation agréable s'affichera.
+
+### 1.2. Ergonomie et Performance
+*   **Responsive Design** : 
+    *   *Côté Client* : Pensé **"Mobile-First"** (car les clients consulteront depuis leur téléphone). L'interface ressemblera à une application native avec une barre de navigation en bas (Bottom Navigation).
+    *   *Côté Réceptionniste/Gérant* : Pensé **"Tablette/Desktop-First"** pour optimiser l'espace de travail et la saisie rapide au comptoir.
+*   **Performance** : Temps de chargement instantané (React/Next.js). Les images seront optimisées.
+*   **Simplicité** : Aucune surcharge visuelle. Chaque écran ne doit avoir qu'un seul objectif principal (Call-To-Action clair).
+
+---
+
+## 2. DESCRIPTION DÉTAILLÉE DES INTERFACES
+
+### 2.1. L'Espace Public (Landing Page & Menu)
+*Cible : Clients potentiels ou réguliers n'étant pas encore connectés.*
+
+*   **Bannière d'accueil (Hero Section)** :
+    *   *Éléments* : Belle image Pexels de fond (pressing de luxe), titre accrocheur ("Prenez soin de vos vêtements"), un bouton "Se connecter".
+*   **Menu des Services (Catalogue)** :
+    *   *Éléments* : Grille de cartes (Cards). Chaque carte représente un service (ex: Lavage Chemise).
+    *   *Contenu d'une carte* : Image Pexels illustrative, Titre, Description courte, Prix. Un badge "Service Express disponible".
+    *   *Actions* : Le client peut scroller, filtrer par catégorie (Hommes, Femmes, Nettoyage à sec). Il ne peut pas commander, c'est purement consultatif.
+
+### 2.2. Interface d'Authentification (Login)
+*   *Éléments* : Champ "Nom d'utilisateur" ou "Téléphone", Champ "Mot de passe", Bouton "Se connecter", Lien "Mot de passe oublié".
+*   *Actions* : Le système détecte automatiquement le rôle (Client, Réceptionniste, Gérant) et redirige vers le bon tableau de bord après une connexion réussie.
+
+---
+
+### 2.3. Espace Client (Mobile)
+*Navigation principale : Accueil, Mes Commandes, Notifications.*
+
+*   **Écran 1 : Tableau de bord (Accueil Client)**
+    *   *Éléments* : Salutation personnalisée ("Bonjour Jean").
+    *   *Widget "Statut en direct"* : Une grande carte affichant la commande en cours avec une barre de progression visuelle (Déposé ➔ En cours ➔ Prêt).
+    *   *Bouton d'action rapide* : "Scanner ma facture" (ouvre l'appareil photo pour flasher le QR code si besoin).
+*   **Écran 2 : Mes Commandes & Factures**
+    *   *Éléments* : Liste chronologique des commandes.
+    *   *Contenu d'un item* : Numéro de commande, date, prix, et un badge de statut ("Payé" en vert, "Non Payé" en rouge).
+    *   *Actions* : Si "Non Payé", un bouton **"Payer maintenant (CinetPay)"** est très visible. Au clic, ouverture sécurisée du widget de paiement Mobile Money/Carte.
+*   **Écran 3 : Notifications (Menu cloche)**
+    *   *Éléments* : Liste des messages internes ("Votre chemise est prête pour le retrait !"). Non lues en gras.
+
+---
+
+### 2.4. Espace Réceptionniste (Comptoir / Tablette)
+*Navigation principale (Sidebar à gauche) : Caisse/Nouvelle Commande, Suivi, Catalogue.*
+
+*   **Écran 1 : Nouvelle Commande (Caisse)**
+    *   *Éléments* : 
+        *   Barre de recherche client (par nom ou téléphone). S'il n'existe pas, un bouton "+" ouvre une petite fenêtre pour l'inscrire rapidement.
+        *   Grille des services (cliquable comme une caisse tactile).
+        *   Panier (à droite) : Liste les articles ajoutés.
+    *   *Actions par article dans le panier* : Modifier la quantité, choisir "Normal" ou "Express", ajouter une **"Note d'état"** (icône stylo pour écrire "Tache de café").
+    *   *Validation* : Bouton "Générer la commande". Affiche une fenêtre pop-up proposant "Imprimer Facture" (avec génération automatique du QR code et des identifiants s'il s'agit d'un nouveau client).
+*   **Écran 2 : Suivi et Retrait (Liste des commandes)**
+    *   *Éléments* : Tableau Kanban ou Liste avec les colonnes : "À traiter", "En cours", "Prêt", "Retiré".
+    *   *Actions* : 
+        *   **Bouton "Scanner QR Code"** : Ouvre la caméra de la tablette pour flasher la facture du client physiquement présent, ce qui ouvre immédiatement sa commande.
+        *   Menu déroulant pour changer le statut (déclenche la notification WebSockets au client).
+        *   Bouton "Valider Paiement Cash" si le client paie en espèces au comptoir.
+*   **Écran 3 : Gestion du Catalogue (Menu)**
+    *   *Éléments* : Liste des services existants.
+    *   *Actions* : Bouton "Ajouter un service". Formulaire : Nom, prix, importation d'une belle image (ou sélection d'un lien Pexels). Activer/désactiver un service.
+
+---
+
+### 2.5. Espace Gérant (Bureau / Desktop)
+*Navigation principale : Dashboard, Rapports, Utilisateurs.*
+
+*   **Écran 1 : Tableau de bord principal**
+    *   *Éléments* : Cartes de statistiques en haut (Revenus du jour, Nombre de commandes en cours, Nouveaux clients).
+    *   *Graphiques* : Graphique en courbe (courbe des revenus sur 30 jours) très épuré (ex: Recharts ou Chart.js).
+*   **Écran 2 : Gestion des Employés**
+    *   *Éléments* : Tableau listant les réceptionnistes.
+    *   *Actions* : Ajouter un nouveau réceptionniste (Générer des identifiants), désactiver un accès en cas de licenciement.
+*   **Écran 3 : Rapports Financiers**
+    *   *Éléments* : Filtres par date (De... à...).
+    *   *Actions* : Exporter en PDF ou Excel la liste détaillée des commandes et la somme totale encaissée (distinction entre "Cash" et "Mobile Money/CinetPay").
