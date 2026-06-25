@@ -73,7 +73,7 @@ export interface Payment {
   id: string;
   id_facture: string;
   montant: number;
-  mode_paiement: 'Cash' | 'CinetPay';
-  reference_cinetpay?: string;
+  mode_paiement: 'Cash' | 'PawaPay';
+  reference_pawapay?: string;
   date_paiement: string;
 }

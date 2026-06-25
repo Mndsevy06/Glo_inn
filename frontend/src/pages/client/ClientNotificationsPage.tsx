@@ -1,28 +1,71 @@
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useAuth } from '@/context/AuthContext';
-import { getClientNotifications } from '@/data/mock';
+import { clientApi } from '@/lib/api';
 import { formatDateTime } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Bell, CheckCircle, Clock, AlertCircle, Package } from 'lucide-react';
-import { useState } from 'react';
+import { Bell, CheckCircle, Clock, Package } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useSocket } from '@/context/SocketContext';
+import { useToast } from '@/context/ToastContext';
 
-export function ClientNotificationsPage() {
+export function ClientNotificationsPage({ isModal = false }: { isModal?: boolean }) {
   const { user } = useAuth();
-  const [notifs, setNotifs] = useState(getClientNotifications(user?.id ?? ''));
+  const { addToast } = useToast();
+  const { socket } = useSocket();
+  const [notifs, setNotifs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const markRead = (id: string) => {
-    setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, lue: true } : n)));
+  useEffect(() => {
+    const fetchNotifs = async () => {
+      try {
+        const data = await clientApi.getNotifications();
+        setNotifs(data);
+      } catch (error) {
+        console.error('Error fetching notifications', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNotifs();
+  }, []);
+
+  // Listen for real-time notifications via WebSocket
+  useEffect(() => {
+    if (!socket) return;
+    const handleNewNotification = (notif: any) => {
+      setNotifs((prev) => [notif, ...prev]);
+      addToast('🔔 Nouvelle notification reçue !', 'success');
+    };
+    socket.on('new_notification', handleNewNotification);
+    return () => {
+      socket.off('new_notification', handleNewNotification);
+    };
+  }, [socket]);
+
+  const markRead = async (id: string) => {
+    try {
+      await clientApi.markNotificationRead(id);
+      setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, lue: true } : n)));
+    } catch (error) {
+      console.error('Error marking notification read', error);
+    }
   };
+
+  if (loading) {
+    return <div className="p-8 text-center text-neutral-500">Chargement...</div>;
+  }
 
   return (
     <div className="py-4 space-y-4">
-      <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 font-display mb-2">
-        Notifications
-      </h1>
+      {!isModal && (
+        <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 font-display mb-2">
+          Notifications
+        </h1>
+      )}
 
       <div className="space-y-3">
         {notifs.map((notif, i) => {
-          const isReady = notif.message.includes('pret');
+          const isReady = notif.message.toLowerCase().includes('prêt') || notif.message.toLowerCase().includes('pret');
           const isDepot = notif.message.includes('deposee');
           const isProgress = notif.message.includes('en cours');
           const isRetire = notif.message.includes('retiree');

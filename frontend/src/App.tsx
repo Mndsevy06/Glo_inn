@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth }  from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { ToastProvider } from '@/context/ToastContext';
+import { SocketProvider } from '@/context/SocketContext';
 import { ClientLayout } from '@/components/layouts/ClientLayout';
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { LandingPage } from '@/pages/public/LandingPage';
@@ -15,6 +16,7 @@ import { NewOrderPage } from '@/pages/dashboard/NewOrderPage';
 import { OrdersListPage } from '@/pages/dashboard/OrdersListPage';
 import { ReportsPage } from '@/pages/dashboard/ReportsPage';
 import { UsersPage } from '@/pages/dashboard/UsersPage';
+import { MenuManagementPage } from '@/pages/dashboard/MenuManagementPage';
 
 function RequireAuth({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
   const { user, isAuthenticated } = useAuth();
@@ -29,7 +31,8 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <ToastProvider>
-            <Routes>
+            <SocketProvider>
+              <Routes>
               {/* Public */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/menu" element={<MenuPage />} />
@@ -49,10 +52,12 @@ function App() {
                 <Route path="orders" element={<OrdersListPage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="users" element={<UsersPage />} />
+                <Route path="menu" element={<MenuManagementPage />} />
               </Route>
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </SocketProvider>
           </ToastProvider>
         </AuthProvider>
       </ThemeProvider>

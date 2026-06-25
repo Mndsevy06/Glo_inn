@@ -5,16 +5,19 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingCart, ClipboardList, Users,
-  BarChart3, LogOut, Moon, Sun, Shirt, Search, Bell, Menu, X,
-  ChevronRight
+  BarChart3, LogOut, Moon, Sun, Shirt, Search, Menu, X, Bell,
+  ChevronRight, UtensilsCrossed, Coins, DollarSign, Settings
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { authApi, configApi } from '@/lib/api';
+import { CurrencyMenu } from '@/components/ui/CurrencyMenu';
 
 const allSidebarItems = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord', roles: ['gerant', 'receptionniste'] },
   { path: '/dashboard/new-order', icon: ShoppingCart, label: 'Nouvelle Commande', roles: ['receptionniste'] },
   { path: '/dashboard/orders', icon: ClipboardList, label: 'Liste des Commandes', roles: ['receptionniste'] },
-  { path: '/dashboard/reports', icon: BarChart3, label: 'Rapports', roles: ['gerant'] },
+  { path: '/dashboard/reports', icon: BarChart3, label: 'Rapports', roles: ['gerant', 'receptionniste'] },
+  { path: '/dashboard/menu', icon: UtensilsCrossed, label: 'Gestion du Menu', roles: ['gerant', 'receptionniste'] },
   { path: '/dashboard/users', icon: Users, label: 'Utilisateurs', roles: ['gerant'] },
 ];
 
@@ -26,6 +29,37 @@ export function DashboardLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
+  const currentCurrency = localStorage.getItem('pressing-gloria-currency') || 'CDF';
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setSettingsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const toggleThemeAndSave = async () => {
+    toggle();
+    const newTheme = isDark ? 'light' : 'dark';
+    try {
+      await authApi.updateSettings({ theme: newTheme });
+    } catch { }
+  };
+
+  const toggleCurrency = async () => {
+    const newCurrency = currentCurrency === 'CDF' ? 'USD' : 'CDF';
+    localStorage.setItem('pressing-gloria-currency', newCurrency);
+    try {
+      await authApi.updateSettings({ currency: newCurrency });
+    } catch { }
+    window.location.reload();
+  };
 
   const handleLogout = () => {
     logout();
@@ -34,7 +68,7 @@ export function DashboardLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex">
+    <div className="h-screen overflow-hidden bg-neutral-50 dark:bg-neutral-950 flex">
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-64 glass-sidebar transform transition-transform duration-300 lg:translate-x-0 lg:static lg:flex-shrink-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
@@ -89,9 +123,10 @@ export function DashboardLayout() {
           </nav>
 
           {/* Footer */}
-          <div className="p-3 border-t border-white/20 dark:border-white/10">
+          <div className="p-3 border-t border-white/20 dark:border-white/10 space-y-1">
+            <CurrencyMenu variant="sidebar" showSetRate={user?.role === 'gerant'} />
             <button
-              onClick={toggle}
+              onClick={toggleThemeAndSave}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-white/50 dark:hover:bg-white/10 transition-all"
             >
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -146,14 +181,47 @@ export function DashboardLayout() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button 
-              className="relative p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
-              aria-label="Notifications"
-              title="Notifications"
-            >
-              <Bell className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-primary-500 rounded-full" />
-            </button>
+            {user?.role !== 'gerant' && user?.role !== 'receptionniste' && (
+              <button 
+                className="relative p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
+                aria-label="Notifications"
+                title="Notifications"
+              >
+                <Bell className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-primary-500 rounded-full" />
+              </button>
+            )}
+            
+            <div className="relative" ref={settingsRef}>
+              <button
+                onClick={() => setSettingsOpen(!settingsOpen)}
+                className="p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
+                aria-label="Paramètres"
+                title="Paramètres"
+              >
+                <Settings className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+              </button>
+
+              {settingsOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-xl overflow-hidden z-50">
+                  <button
+                    onClick={() => { toggleThemeAndSave(); setSettingsOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+                  >
+                    {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                    <span>{isDark ? 'Mode Clair' : 'Mode Sombre'}</span>
+                  </button>
+                  <div className="h-px bg-neutral-200 dark:bg-neutral-700 mx-3" />
+                  <button
+                    onClick={() => { toggleCurrency(); setSettingsOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+                  >
+                    {currentCurrency === 'CDF' ? <DollarSign className="w-4 h-4" /> : <Coins className="w-4 h-4" />}
+                    <span>Passer en {currentCurrency === 'CDF' ? 'USD' : 'CDF'}</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -165,7 +233,7 @@ export function DashboardLayout() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Outlet />
+            <Outlet context={{ searchQuery }} />
           </motion.div>
         </main>
       </div>

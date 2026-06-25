@@ -6,10 +6,20 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number): string {
+  const currency = localStorage.getItem('pressing-gloria-currency') || 'CDF';
+  const rateStr = localStorage.getItem('pressing-gloria-rate');
+  const rate = rateStr ? Number(rateStr) : (Number(import.meta.env.VITE_EXCHANGE_RATE) || 2800);
+
+  let finalAmount = amount;
+  if (currency === 'USD') {
+    finalAmount = amount / rate;
+  }
+
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
-    currency: 'CDF',
-  }).format(amount);
+    currency: currency,
+    maximumFractionDigits: currency === 'USD' ? 2 : 0,
+  }).format(finalAmount);
 }
 
 export function formatDate(date: string | Date): string {

@@ -2,10 +2,13 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { useAuth } from '@/context/AuthContext';
-import { getClientOrders, getClientNotifications } from '@/data/mock';
+import { clientApi } from '@/lib/api';
+import { formatCurrency } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Package, Clock, CheckCircle, CreditCard, Bell, QrCode, Shirt, ChevronRight } from 'lucide-react';
+import { Package, Clock, CheckCircle, CreditCard, Bell, QrCode, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useSocket } from '@/context/SocketContext';
 
 const statusConfig = {
   depose: { label: 'Depose', icon: Package, color: 'text-warning-500', bg: 'bg-warning-500/10', border: 'border-warning-500/20' },
@@ -24,11 +27,44 @@ const statusSteps = [
 export function ClientHomePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const orders = getClientOrders(user?.id ?? '');
-  const notifications = getClientNotifications(user?.id ?? '');
+  const [orders, setOrders] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [ordersData, notificationsData] = await Promise.all([
+          clientApi.getOrders(),
+          clientApi.getNotifications()
+        ]);
+        setOrders(ordersData);
+        setNotifications(notificationsData);
+      } catch (error) {
+        console.error('Error fetching client data', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Real-time: update unread count when a new notification arrives
+  useEffect(() => {
+    if (!socket) return;
+    const handler = () => setNotifications(prev => [...prev, { lue: false }]);
+    socket.on('new_notification', handler);
+    return () => socket.off('new_notification', handler);
+  }, [socket]);
+
+  if (loading) {
+    return <div className="p-8 text-center text-neutral-500">Chargement...</div>;
+  }
+
   const activeOrder = orders.find((o) => o.etat !== 'retire');
   const unreadCount = notifications.filter((n) => !n.lue).length;
-  const unpaidOrders = orders.filter((o) => o.statut_paiement === 'Non payee');
+  const unpaidOrders = orders.filter((o) => o.statut_paiement !== 'Payee');
 
   return (
     <div className="space-y-6 py-4">
@@ -89,11 +125,7 @@ export function ClientHomePage() {
               </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-white/20 dark:border-white/10 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Retrait prevu</p>
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{activeOrder.date_retrait_prevue}</p>
-              </div>
+            <div className="mt-4 pt-4 border-t border-white/20 dark:border-white/10 flex justify-end">
               <GlassButton variant="secondary" size="sm" onClick={() => navigate('/client/orders')} icon={<ChevronRight className="w-4 h-4" />}>
                 Details
               </GlassButton>
@@ -102,37 +134,37 @@ export function ClientHomePage() {
         </motion.div>
       )}
 
-      {/* Quick Actions */}
+      {/* Quick Actions & Stats */}
       <div className="grid grid-cols-2 gap-3">
+        {/* Unpaid Orders */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
           <GlassCard className="p-4 text-center cursor-pointer" onClick={() => navigate('/client/orders')}>
-            <div className="w-10 h-10 rounded-xl bg-primary-500/10 dark:bg-primary-500/20 flex items-center justify-center mx-auto mb-2">
-              <CreditCard className="w-5 h-5 text-primary-500" />
+            <div className="w-10 h-10 rounded-xl bg-error-500/10 flex items-center justify-center mx-auto mb-2">
+              <CreditCard className="w-5 h-5 text-error-500" />
             </div>
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{unpaidOrders.length} facture{unpaidOrders.length > 1 ? 's' : ''} impayee{unpaidOrders.length > 1 ? 's' : ''}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Payer maintenant</p>
+            <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100">{unpaidOrders.length}</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Facture{unpaidOrders.length > 1 ? 's' : ''} impayée{unpaidOrders.length > 1 ? 's' : ''}</p>
           </GlassCard>
         </motion.div>
+
+        {/* Total Spent */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <GlassCard className="p-4 text-center cursor-pointer" onClick={() => navigate('/client/notifications')}>
-            <div className="w-10 h-10 rounded-xl bg-secondary-500/10 dark:bg-secondary-500/20 flex items-center justify-center mx-auto mb-2 relative">
-              <Bell className="w-5 h-5 text-secondary-500" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-error-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
+          <GlassCard className="p-4 text-center">
+            <div className="w-10 h-10 rounded-xl bg-success-500/10 flex items-center justify-center mx-auto mb-2">
+              <CheckCircle className="w-5 h-5 text-success-500" />
             </div>
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Notifications</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{unreadCount} non lue{unreadCount > 1 ? 's' : ''}</p>
+            <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100 mt-1">
+              {formatCurrency(orders.filter(o => o.statut_paiement === 'Payee').reduce((acc, curr) => acc + Number(curr.montant_total), 0))}
+            </p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Total Dépensé</p>
           </GlassCard>
         </motion.div>
       </div>
@@ -161,13 +193,13 @@ export function ClientHomePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{order.id.toUpperCase()}</p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{order.id.split('-')[0].toUpperCase()}</p>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${config.bg} ${config.color} border ${config.border}`}>
                         {config.label}
                       </span>
                     </div>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                      {order.lignes.length} article{order.lignes.length > 1 ? 's' : ''} · {order.montant_total.toLocaleString()} CDF
+                      {order.lignes?.length || 0} article{(order.lignes?.length || 0) > 1 ? 's' : ''} · {formatCurrency(Number(order.montant_total))}
                     </p>
                   </div>
                 </div>

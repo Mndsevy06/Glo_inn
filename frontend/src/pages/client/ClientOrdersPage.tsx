@@ -2,42 +2,337 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { useAuth } from '@/context/AuthContext';
-import { getClientOrders } from '@/data/mock';
+import { clientApi, paymentsApi } from '@/lib/api';
 import { formatDate, formatCurrency } from '@/lib/utils';
-import { motion } from 'framer-motion';
-import { Package, Clock, CheckCircle, CreditCard, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Package, Clock, CheckCircle, CreditCard, ChevronRight,
+  Smartphone, X, Loader2, CheckCircle2, AlertCircle, Wifi
+} from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useSocket } from '@/context/SocketContext';
+import { useToast } from '@/context/ToastContext';
 
-const statusConfig = {
-  depose: { label: 'Depose', icon: Package, color: 'text-warning-500', bg: 'bg-warning-500/10', border: 'border-warning-500/20' },
-  en_cours: { label: 'En cours', icon: Clock, color: 'text-primary-500', bg: 'bg-primary-500/10', border: 'border-primary-500/20' },
-  pret: { label: 'Pret', icon: CheckCircle, color: 'text-success-500', bg: 'bg-success-500/10', border: 'border-success-500/20' },
-  retire: { label: 'Retire', icon: CheckCircle, color: 'text-neutral-500', bg: 'bg-neutral-500/10', border: 'border-neutral-500/20' },
+const statusConfig: Record<string, any> = {
+  depose:  { label: 'Deposé',   icon: Package,      color: 'text-warning-500', bg: 'bg-warning-500/10',  border: 'border-warning-500/20' },
+  en_cours:{ label: 'En cours', icon: Clock,        color: 'text-primary-500', bg: 'bg-primary-500/10',  border: 'border-primary-500/20' },
+  pret:    { label: 'Prêt',     icon: CheckCircle,  color: 'text-success-500', bg: 'bg-success-500/10',  border: 'border-success-500/20' },
+  retire:  { label: 'Retiré',   icon: CheckCircle,  color: 'text-neutral-500', bg: 'bg-neutral-500/10',  border: 'border-neutral-500/20' },
 };
 
+const operateurLabels: Record<string, { label: string; color: string; bg: string }> = {
+  AIRTEL: { label: 'Airtel Money', color: 'text-red-600 dark:text-red-500', bg: 'bg-red-500' },
+  ORANGE: { label: 'Orange Money', color: 'text-orange-600 dark:text-orange-500', bg: 'bg-orange-500' },
+  MPESA:  { label: 'M-Pesa',       color: 'text-emerald-600 dark:text-emerald-500', bg: 'bg-emerald-600' },
+};
+
+// ─── Payment Modal ────────────────────────────────────────────────────────────
+function PaymentModal({
+  order,
+  onClose,
+  onSuccess,
+}: {
+  order: any;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const { user } = useAuth();
+  const { socket } = useSocket();
+  const { addToast } = useToast();
+
+  const [telephone, setTelephone] = useState(user?.telephone || '');
+  const [step, setStep] = useState<'form' | 'pending' | 'success' | 'error'>('form');
+  const [depositId, setDepositId] = useState<string | null>(null);
+  const [operateur, setOperateur] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const facture = order.facture;
+
+  // Poll PawaPay status every 5 seconds when pending
+  useEffect(() => {
+    if (step !== 'pending' || !depositId) return;
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await paymentsApi.checkStatus(depositId);
+        const liveStatus = res?.pawapay_live?.[0]?.status || res?.paiement?.pawapay_status;
+        if (liveStatus === 'COMPLETED') {
+          clearInterval(pollRef.current!);
+          setStep('success');
+          addToast('✅ Paiement confirmé !', 'success');
+          onSuccess();
+        } else if (liveStatus === 'FAILED' || liveStatus === 'REVERSED') {
+          clearInterval(pollRef.current!);
+          setErrorMsg('Le paiement a échoué ou a été annulé. Veuillez réessayer.');
+          setStep('error');
+        }
+      } catch {
+        // silently ignore poll errors
+      }
+    }, 5000);
+
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [step, depositId]);
+
+  // Also listen for WebSocket confirmation (faster than polling)
+  useEffect(() => {
+    if (!socket || step !== 'pending') return;
+    const handler = () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      setStep('success');
+      addToast('✅ Paiement confirmé en temps réel !', 'success');
+      onSuccess();
+    };
+    socket.on('payment_confirmed', handler);
+    return () => socket.off('payment_confirmed', handler);
+  }, [socket, step]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!facture?.id) {
+      setErrorMsg('Aucune facture associée à cette commande.');
+      setStep('error');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await paymentsApi.initiate({ id_facture: facture.id, telephone });
+      setDepositId(res.depositId);
+      setOperateur(res.operateur);
+      setStep('pending');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Erreur lors de l\'initiation du paiement.');
+      setStep('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md"
+      >
+        <GlassCard className="p-0 overflow-hidden" hover={false}>
+          {/* Header */}
+          <div className="p-5 border-b border-white/20 dark:border-white/10 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
+                <Smartphone className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-bold text-neutral-900 dark:text-neutral-100">Paiement Mobile Money</h2>
+                <p className="text-xs text-neutral-500">Commande #{order.id.split('-')[0].toUpperCase()}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/10 text-neutral-500 transition-colors"
+              title="Fermer"
+              aria-label="Fermer le modal de paiement"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="p-5">
+            {/* ── STEP: FORM ── */}
+            {step === 'form' && (
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Amount summary */}
+                <div className="glass-panel p-4 flex items-center justify-between">
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">Montant à payer</span>
+                  <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
+                    {formatCurrency(Number(order.montant_total))}
+                  </span>
+                </div>
+
+                {/* Supported operators */}
+                <div>
+                  <p className="text-xs text-neutral-500 mb-2 font-medium uppercase tracking-wide">Opérateurs supportés</p>
+                  <div className="flex gap-3 justify-center">
+                    {Object.entries(operateurLabels).map(([key, val]) => (
+                      <div key={key} className="flex flex-col items-center gap-1.5">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold shadow-sm ${val.bg}`}>
+                          {val.label.charAt(0)}
+                        </div>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${val.color}`}>
+                          {val.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Phone input */}
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+                    Numéro de téléphone Mobile Money
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-500 font-medium">+243</span>
+                    <input
+                      type="tel"
+                      value={telephone}
+                      onChange={(e) => setTelephone(e.target.value)}
+                      placeholder="0975 123 456"
+                      className="glass-input w-full pl-14 py-3"
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-neutral-400 mt-1.5">
+                    L'opérateur sera détecté automatiquement selon votre numéro.
+                  </p>
+                </div>
+
+                <GlassButton
+                  type="submit"
+                  variant="primary"
+                  className="w-full"
+                  icon={isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                >
+                  {isSubmitting ? 'Initiation en cours...' : `Payer ${formatCurrency(Number(order.montant_total))}`}
+                </GlassButton>
+
+                <p className="text-xs text-center text-neutral-400">
+                  Sécurisé par <span className="font-bold text-neutral-600 dark:text-neutral-300">PawaPay</span> · Vous recevrez une confirmation USSD sur votre téléphone.
+                </p>
+              </form>
+            )}
+
+            {/* ── STEP: PENDING ── */}
+            {step === 'pending' && (
+              <div className="text-center py-6 space-y-5">
+                <div className="w-20 h-20 rounded-full bg-primary-500/10 border-4 border-primary-500/20 flex items-center justify-center mx-auto">
+                  <Wifi className="w-9 h-9 text-primary-500 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-neutral-900 dark:text-neutral-100">
+                    En attente de confirmation
+                  </h3>
+                  {operateur && (
+                    <p className={`text-sm font-medium mt-1 ${operateurLabels[operateur]?.color}`}>
+                      via {operateurLabels[operateur]?.label}
+                    </p>
+                  )}
+                  <p className="text-sm text-neutral-500 mt-2 leading-relaxed">
+                    Vérifiez votre téléphone <strong>({telephone})</strong>.
+                    Un message USSD vous demande de confirmer le paiement avec votre PIN.
+                  </p>
+                </div>
+                <div className="glass-panel p-4 text-left space-y-2">
+                  <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wide">Instructions :</p>
+                  <ol className="text-xs text-neutral-600 dark:text-neutral-400 space-y-1 list-decimal list-inside">
+                    <li>Consultez la notification sur votre téléphone</li>
+                    <li>Entrez votre PIN Mobile Money</li>
+                    <li>La page se mettra à jour automatiquement</li>
+                  </ol>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-xs text-neutral-400">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Vérification automatique en cours…</span>
+                </div>
+              </div>
+            )}
+
+            {/* ── STEP: SUCCESS ── */}
+            {step === 'success' && (
+              <div className="text-center py-6 space-y-4">
+                <div className="w-20 h-20 rounded-full bg-success-500/10 border-4 border-success-500/20 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-10 h-10 text-success-500" />
+                </div>
+                <h3 className="font-bold text-xl text-neutral-900 dark:text-neutral-100">Paiement réussi !</h3>
+                <p className="text-sm text-neutral-500">
+                  Votre paiement de <strong>{formatCurrency(Number(order.montant_total))}</strong> a été confirmé.
+                </p>
+                <GlassButton variant="primary" className="w-full" onClick={onClose}>
+                  Fermer
+                </GlassButton>
+              </div>
+            )}
+
+            {/* ── STEP: ERROR ── */}
+            {step === 'error' && (
+              <div className="text-center py-6 space-y-4">
+                <div className="w-20 h-20 rounded-full bg-error-500/10 border-4 border-error-500/20 flex items-center justify-center mx-auto">
+                  <AlertCircle className="w-10 h-10 text-error-500" />
+                </div>
+                <h3 className="font-bold text-xl text-neutral-900 dark:text-neutral-100">Paiement échoué</h3>
+                <p className="text-sm text-neutral-500">{errorMsg}</p>
+                <div className="flex gap-3">
+                  <GlassButton variant="secondary" className="flex-1" onClick={onClose}>Annuler</GlassButton>
+                  <GlassButton variant="primary" className="flex-1" onClick={() => setStep('form')}>Réessayer</GlassButton>
+                </div>
+              </div>
+            )}
+          </div>
+        </GlassCard>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export function ClientOrdersPage() {
   const { user } = useAuth();
-  const orders = getClientOrders(user?.id ?? '');
+  const { addToast } = useToast();
+  const [orders, setOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
+  const [payingOrder, setPayingOrder] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchOrders = async () => {
+    try {
+      const data = await clientApi.getOrders();
+      setOrders(data);
+    } catch (error) {
+      console.error('Error fetching orders', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="py-4 space-y-4">
-      <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 font-display mb-2">
+      <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 font-display">
         Mes Commandes
       </h1>
 
       <div className="space-y-3">
         {orders.map((order, i) => {
-          const config = statusConfig[order.etat];
+          const config = statusConfig[order.etat] || statusConfig['depose'];
           const StatusIcon = config.icon;
           const isSelected = selectedOrder === order.id;
+          const isPaid = order.statut_paiement === 'Payee';
 
           return (
             <motion.div
               key={order.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ delay: i * 0.08 }}
             >
               <GlassCard
                 className="overflow-hidden"
@@ -52,27 +347,30 @@ export function ClientOrdersPage() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                          {order.id.toUpperCase()}
+                          #{order.id.split('-')[0].toUpperCase()}
                         </p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400">
                           {formatDate(order.date_reception)}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <Badge variant={order.statut_paiement === 'Payee' ? 'success' : 'error'}>
-                        {order.statut_paiement}
+                    <div className="flex items-center gap-2">
+                      <Badge variant={isPaid ? 'success' : 'error'}>
+                        {isPaid ? 'Payée' : 'Non payée'}
                       </Badge>
+                      <span className={`text-xs px-2 py-1 rounded-lg font-medium ${config.bg} ${config.color} border ${config.border}`}>
+                        {config.label}
+                      </span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {order.lignes.length} article{order.lignes.length > 1 ? 's' : ''}
+                        {order.lignes?.length || 0} article{(order.lignes?.length || 0) > 1 ? 's' : ''}
                       </span>
                       <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                        {formatCurrency(order.montant_total)}
+                        {formatCurrency(Number(order.montant_total))}
                       </span>
                     </div>
                     <ChevronRight className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isSelected ? 'rotate-90' : ''}`} />
@@ -80,46 +378,66 @@ export function ClientOrdersPage() {
                 </div>
 
                 {/* Expanded details */}
-                {isSelected && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="border-t border-white/20 dark:border-white/10 bg-white/30 dark:bg-white/5"
-                  >
-                    <div className="p-4 space-y-3">
-                      <div className="space-y-2">
-                        {order.lignes.map((ligne) => (
-                          <div key={ligne.id} className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                              <span className="text-neutral-900 dark:text-neutral-100">{ligne.service.libelle}</span>
-                              <span className="text-xs text-neutral-500 dark:text-neutral-400">x{ligne.quantite}</span>
+                <AnimatePresence>
+                  {isSelected && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="border-t border-white/20 dark:border-white/10 bg-white/30 dark:bg-white/5"
+                    >
+                      <div className="p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+                        {/* Order lines */}
+                        <div className="space-y-2">
+                          {order.lignes?.map((ligne: any) => (
+                            <div key={ligne.id} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <span className="text-neutral-900 dark:text-neutral-100">{ligne.service?.libelle}</span>
+                                <span className="text-xs text-neutral-500 dark:text-neutral-400">×{ligne.quantite}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={ligne.type_service === 'Express' ? 'warning' : 'default'}>
+                                  {ligne.type_service}
+                                </Badge>
+                                <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                                  {formatCurrency(Number(ligne.sous_total))}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant={ligne.type_service === 'Express' ? 'warning' : 'default'}>
-                                {ligne.type_service}
-                              </Badge>
-                              <span className="font-medium text-neutral-900 dark:text-neutral-100">
-                                {formatCurrency(ligne.sous_total)}
-                              </span>
-                            </div>
+                          ))}
+                        </div>
+
+                        {/* Total */}
+                        <div className="pt-3 border-t border-white/20 dark:border-white/10 flex items-center justify-between">
+                          <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Total</span>
+                          <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
+                            {formatCurrency(Number(order.montant_total))}
+                          </span>
+                        </div>
+
+                        {/* Pay button */}
+                        {!isPaid && (
+                          <GlassButton
+                            variant="primary"
+                            className="w-full"
+                            icon={<Smartphone className="w-4 h-4" />}
+                            onClick={() => setPayingOrder(order)}
+                          >
+                            Payer par Mobile Money
+                          </GlassButton>
+                        )}
+
+                        {isPaid && (
+                          <div className="flex items-center justify-center gap-2 py-2 text-success-600 dark:text-success-400">
+                            <CheckCircle2 className="w-5 h-5" />
+                            <span className="text-sm font-medium">Facture entièrement payée</span>
                           </div>
-                        ))}
+                        )}
                       </div>
-                      <div className="pt-3 border-t border-white/20 dark:border-white/10 flex items-center justify-between">
-                        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Total</span>
-                        <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
-                          {formatCurrency(order.montant_total)}
-                        </span>
-                      </div>
-                      {order.statut_paiement === 'Non payee' && (
-                        <GlassButton variant="primary" className="w-full" icon={<CreditCard className="w-4 h-4" />}>
-                          Payer maintenant (CinetPay)
-                        </GlassButton>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </GlassCard>
             </motion.div>
           );
@@ -132,6 +450,20 @@ export function ClientOrdersPage() {
           <p className="text-neutral-500 dark:text-neutral-400">Aucune commande pour le moment.</p>
         </div>
       )}
+
+      {/* Payment Modal */}
+      <AnimatePresence>
+        {payingOrder && (
+          <PaymentModal
+            order={payingOrder}
+            onClose={() => setPayingOrder(null)}
+            onSuccess={() => {
+              setPayingOrder(null);
+              fetchOrders(); // Refresh order list to show updated payment status
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

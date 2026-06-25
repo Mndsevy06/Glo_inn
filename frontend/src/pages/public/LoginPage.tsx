@@ -16,29 +16,27 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!username || !password) {
       addToast('Veuillez remplir tous les champs', 'warning');
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      const success = login(username, password);
-      if (success) {
-        addToast('Connexion reussie !', 'success');
-        const user = { username, password }; // placeholder
-        if (user.username === 'jean_bosco' || user.username === 'marie_claire' || user.username === 'patrick_mut' || user.username === 'aline_k') {
-          navigate('/client');
-        } else if (user.username === 'sophie_l') {
-          navigate('/dashboard');
-        } else {
-          navigate('/dashboard');
-        }
+    
+    const result = await login(username, password);
+    
+    if (result.success && result.role) {
+      addToast('Connexion réussie !', 'success');
+      if (result.role === 'client') {
+        navigate('/client');
       } else {
-        addToast('Identifiants incorrects', 'error');
+        // receptionniste ou gerant
+        navigate('/dashboard');
       }
-      setLoading(false);
-    }, 800);
+    } else {
+      addToast('Identifiants incorrects', 'error');
+    }
+    setLoading(false);
   };
 
   return (
@@ -55,7 +53,7 @@ export function LoginPage() {
         className="relative z-10 w-full max-w-md mx-4"
       >
         <button 
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/')}
           className="absolute -top-12 left-0 flex items-center gap-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors bg-white/10 dark:bg-black/10 px-3 py-1.5 rounded-full backdrop-blur-sm"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -76,16 +74,16 @@ export function LoginPage() {
 
           <div className="space-y-4">
             <GlassInput
-              label="Nom d'utilisateur"
-              placeholder="ex: jean_bosco"
+              label="Nom d'utilisateur ou Email"
+              placeholder="ex: jean_bosco ou jean@gmail.com"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               icon={<LogIn className="w-4 h-4" />}
             />
             <GlassInput
-              label="Mot de passe"
+              label="Mot de passe ou Numéro de téléphone"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Votre mot de passe"
+              placeholder="Votre mot de passe ou téléphone"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               iconRight={
@@ -106,16 +104,7 @@ export function LoginPage() {
             </GlassButton>
           </div>
 
-          <div className="mt-6 text-center">
-            <p className="text-xs text-neutral-500 dark:text-neutral-500">
-              Comptes de demo:
-            </p>
-            <div className="mt-2 space-y-1 text-xs text-neutral-500 dark:text-neutral-500">
-              <p>Client: <span className="font-mono">jean_bosco / 123456</span></p>
-              <p>Receptionniste: <span className="font-mono">sophie_l / admin123</span></p>
-              <p>Gerant: <span className="font-mono">didier_k / admin123</span></p>
-            </div>
-          </div>
+
         </div>
       </motion.div>
     </div>
