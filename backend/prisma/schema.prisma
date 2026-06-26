@@ -13,6 +13,7 @@ enum Role {
 }
 
 enum EtatCommande {
+  en_attente
   depose
   en_cours
   pret
@@ -32,6 +33,7 @@ enum StatutPaiement {
 enum ModePaiement {
   Cash
   PawaPay
+  Netikash
 }
 
 model Utilisateur {
@@ -80,8 +82,8 @@ model Commande {
   id                  String          @id @default(uuid()) @db.Uuid
   id_client           String          @db.Uuid
   client              Utilisateur     @relation("ClientCommandes", fields: [id_client], references: [id])
-  id_receptionniste   String          @db.Uuid
-  receptionniste      Utilisateur     @relation("ReceptionnisteCommandes", fields: [id_receptionniste], references: [id])
+  id_receptionniste   String?         @db.Uuid
+  receptionniste      Utilisateur?    @relation("ReceptionnisteCommandes", fields: [id_receptionniste], references: [id])
   date_reception      DateTime        @default(now())
   date_retrait_prevue DateTime        @db.Date
   etat                EtatCommande    @default(depose)
@@ -123,17 +125,23 @@ model Facture {
 }
 
 model Paiement {
-  id                String              @id @default(uuid()) @db.Uuid
-  id_facture        String              @db.Uuid
-  facture           Facture             @relation(fields: [id_facture], references: [id], onDelete: Cascade)
-  montant           Decimal             @db.Decimal(10, 2)
-  mode_paiement     ModePaiement
-  // PawaPay fields
-  pawapay_deposit_id String?            @unique  // ID retourné par PawaPay lors de l'initiation
-  pawapay_status    String?             // INITIATED | COMPLETED | FAILED | REVERSED
-  telephone_client  String?             // Numéro de téléphone utilisé pour le paiement
-  operateur         String?             // AIRTEL | ORANGE | MPESA
-  date_paiement     DateTime            @default(now())
+  id                 String              @id @default(uuid()) @db.Uuid
+  id_facture         String              @db.Uuid
+  facture            Facture             @relation(fields: [id_facture], references: [id], onDelete: Cascade)
+  montant            Decimal             @db.Decimal(10, 2)
+  mode_paiement      ModePaiement
+  // PawaPay fields (legacy)
+  pawapay_deposit_id String?             @unique
+  pawapay_status     String?
+  // Netikash fields
+  netikash_trans     String?             // Transaction code returned by Netikash
+  netikash_request_id String?            @unique  // Request ID (last segment of link URL)
+  netikash_status    String?             // requested | approved | completed | failed | expired | locked | canceled
+  netikash_link      String?             // Payment link for client redirect
+  // Common fields
+  telephone_client   String?
+  operateur          String?
+  date_paiement      DateTime            @default(now())
 
   @@map("paiements")
 }

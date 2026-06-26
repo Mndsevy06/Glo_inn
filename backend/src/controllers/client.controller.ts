@@ -3,7 +3,7 @@ import prisma from '../config/db';
 
 export const getMyOrders = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = req.user?.id;
+    const id = (req as any).user?.id;
     if (!id) {
        res.status(401).json({ message: 'Non autorisé' });
        return;
@@ -25,7 +25,7 @@ export const getMyOrders = async (req: Request, res: Response): Promise<void> =>
 
 export const getMyNotifications = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = req.user?.id;
+    const id = (req as any).user?.id;
     if (!id) {
        res.status(401).json({ message: 'Non autorisé' });
        return;
@@ -43,8 +43,8 @@ export const getMyNotifications = async (req: Request, res: Response): Promise<v
 
 export const markNotificationRead = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = req.params.id;
-    const userId = req.user?.id;
+    const id = req.params.id as string;
+    const userId = (req as any).user?.id;
     if (!userId) {
        res.status(401).json({ message: 'Non autorisé' });
        return;

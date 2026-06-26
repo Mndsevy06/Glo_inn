@@ -4,6 +4,7 @@ import type { User, Role } from '@/types';
 interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<{ success: boolean; role?: Role }>;
+  register: (data: any) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   role: Role | null;
   isAuthenticated: boolean;
@@ -88,6 +89,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const register = useCallback(async (data: any): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const resData = await response.json();
+      if (response.ok) {
+        setUser(resData.user);
+        setToken(resData.token);
+        
+        // Sync user settings if provided
+        if (resData.user.theme) {
+          localStorage.setItem('pressing-gloria-theme', resData.user.theme);
+          if (resData.user.theme === 'dark') document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
+        }
+        if (resData.user.currency) {
+          localStorage.setItem('pressing-gloria-currency', resData.user.currency);
+        }
+
+        return { success: true, message: resData.message };
+      }
+      return { success: false, message: resData.message || 'Erreur lors de l\'inscription' };
+    } catch (error) {
+      console.error('Erreur d\'inscription:', error);
+      return { success: false, message: 'Erreur réseau' };
+    }
+  }, []);
+
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
@@ -97,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{
       user,
       login,
+      register,
       logout,
       role: user?.role ?? null,
       isAuthenticated: !!user,

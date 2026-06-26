@@ -33,17 +33,19 @@ export const getAllServicesAdmin = async (req: Request, res: Response): Promise<
 // Create a service (with optional image upload)
 export const createService = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { libelle, description, tarif_unitaire, categorie, express_disponible, tarif_express, actif } = req.body;
+    const { libelle, description, tarif_unitaire, categorie, express_disponible, tarif_express, actif, image_url } = req.body;
 
     if (!libelle || !tarif_unitaire || !categorie) {
       res.status(400).json({ message: 'Champs obligatoires manquants (libelle, tarif_unitaire, categorie).' });
       return;
     }
 
-    // Build image URL if file was uploaded
+    // Build image URL if file was uploaded or url provided
     let imageUrl: string | null = null;
     if (req.file) {
       imageUrl = `/uploads/services/${req.file.filename}`;
+    } else if (image_url) {
+      imageUrl = image_url;
     }
 
     const service = await prisma.service.create({
@@ -70,7 +72,7 @@ export const createService = async (req: Request, res: Response): Promise<void> 
 export const updateService = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const { libelle, description, tarif_unitaire, categorie, express_disponible, tarif_express, actif } = req.body;
+    const { libelle, description, tarif_unitaire, categorie, express_disponible, tarif_express, actif, image_url } = req.body;
 
     const existing = await prisma.service.findUnique({ where: { id } });
     if (!existing) {
@@ -81,12 +83,14 @@ export const updateService = async (req: Request, res: Response): Promise<void> 
     // Handle new image
     let imageUrl: string | undefined = undefined;
     if (req.file) {
-      // Delete old image file if it exists
-      if (existing.image) {
+      // Delete old image file if it exists and is local
+      if (existing.image && !existing.image.startsWith('http')) {
         const oldPath = path.join(process.cwd(), existing.image);
         if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
       }
       imageUrl = `/uploads/services/${req.file.filename}`;
+    } else if (image_url !== undefined) {
+      imageUrl = image_url;
     }
 
     const service = await prisma.service.update({
@@ -121,8 +125,19 @@ export const deleteService = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Delete associated image file
-    if (existing.image) {
+    // Check if this service is referenced by any order lines
+    const usageCount = await prisma.ligneCommande.count({ where: { id_service: id } });
+    if (usageCount > 0) {
+      res.status(409).json({
+        message: `Ce service est utilisé dans ${usageCount} commande(s) et ne peut pas être supprimé. Désactivez-le à la place.`,
+        canDeactivate: true,
+        usageCount,
+      });
+      return;
+    }
+
+    // Delete associated image file (only local files)
+    if (existing.image && !existing.image.startsWith('http')) {
       const imgPath = path.join(process.cwd(), existing.image);
       if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
     }

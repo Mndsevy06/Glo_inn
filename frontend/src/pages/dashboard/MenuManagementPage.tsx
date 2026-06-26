@@ -24,6 +24,7 @@ const emptyForm = {
   express_disponible: false,
   tarif_express: '',
   actif: true,
+  image_url: '',
 };
 
 export function MenuManagementPage() {
@@ -104,6 +105,7 @@ export function MenuManagementPage() {
       express_disponible: s.express_disponible,
       tarif_express: s.tarif_express ? String(s.tarif_express) : '',
       actif: s.actif,
+      image_url: s.image && s.image.startsWith('http') ? s.image : '',
     });
     setImageFile(null);
     setStep(1);
@@ -130,6 +132,8 @@ export function MenuManagementPage() {
       
       if (imageFile) {
         formData.append('image', imageFile);
+      } else {
+        formData.append('image_url', form.image_url);
       }
 
       if (editingService) {
@@ -167,9 +171,24 @@ export function MenuManagementPage() {
       addToast('Service supprimé.', 'success');
       setShowDeleteModal(false);
       fetchServices();
-    } catch (error) {
-      const err = error as Error;
-      addToast(err.message || 'Erreur suppression.', 'error');
+    } catch (error: any) {
+      // Service is used in orders — offer to deactivate instead
+      if (error?.status === 409 || error?.response?.status === 409 || (error?.message && error.message.includes('commande'))) {
+        setShowDeleteModal(false);
+        addToast(
+          `Ce service est utilisé dans des commandes. Il a été désactivé à la place.`,
+          'warning'
+        );
+        // Auto-deactivate
+        try {
+          await servicesApi.updateStatus(toDelete.id, { actif: false });
+          fetchServices();
+        } catch {
+          addToast('Impossible de désactiver le service.', 'error');
+        }
+      } else {
+        addToast(error?.message || 'Erreur suppression.', 'error');
+      }
     }
   };
 
@@ -351,7 +370,7 @@ export function MenuManagementPage() {
                   {/* Image Preview Area */}
                   {service.image && (
                     <div className="h-32 w-full shrink-0 overflow-hidden bg-neutral-100 dark:bg-neutral-800 border-b border-white/10">
-                      <img src={`${API_URL.replace('/api', '')}${service.image}`} alt={service.libelle} className="w-full h-full object-cover" loading="lazy" />
+                      <img src={service.image.startsWith('http') ? service.image : `${API_URL.replace('/api', '')}${service.image}`} alt={service.libelle} className="w-full h-full object-cover" loading="lazy" />
                     </div>
                   )}
                   <div className="p-4 flex-1 space-y-3">
@@ -490,18 +509,26 @@ export function MenuManagementPage() {
 
                     {/* Image Input & Preview */}
                     <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">Image de couverture</label>
+                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">Image (URL ou Fichier)</label>
                       
-                      {(imageFile || editingService?.image) && (
+                      {(imageFile || form.image_url || editingService?.image) && (
                         <div className="mb-3 h-32 w-full rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-white/20 dark:border-white/10 relative">
                           <img 
-                            src={imageFile ? URL.createObjectURL(imageFile) : `${API_URL.replace('/api', '')}${editingService?.image}`} 
+                            src={
+                              imageFile ? URL.createObjectURL(imageFile) : 
+                              form.image_url ? form.image_url : 
+                              editingService?.image?.startsWith('http') ? editingService.image :
+                              `${API_URL.replace('/api', '')}${editingService?.image}`
+                            } 
                             alt="Aperçu" 
                             className="w-full h-full object-cover" 
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://placehold.co/400x300?text=Image+Invalide';
+                            }}
                           />
                           <button 
                             type="button"
-                            onClick={() => setImageFile(null)}
+                            onClick={() => { setImageFile(null); setForm({ ...form, image_url: '' }); if (editingService) editingService.image = null; }}
                             className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-colors"
                           >
                             <X className="w-4 h-4" />
@@ -509,12 +536,25 @@ export function MenuManagementPage() {
                         </div>
                       )}
 
-                      <div className="relative glass-input flex items-center p-2 rounded-xl">
-                        <input type="file" accept="image/*" onChange={e => {
-                          if (e.target.files && e.target.files[0]) {
-                            setImageFile(e.target.files[0]);
-                          }
-                        }} className="w-full text-xs text-neutral-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-900 dark:file:text-primary-300 cursor-pointer" />
+                      <div className="space-y-2">
+                        <input 
+                          type="text" 
+                          placeholder="Coller l'URL d'une image (ex: https://...)" 
+                          value={form.image_url}
+                          onChange={e => {
+                            setForm({ ...form, image_url: e.target.value });
+                            setImageFile(null); // Clear file if url is used
+                          }}
+                          className="glass-input w-full px-4 py-2 text-sm"
+                        />
+                        <div className="relative glass-input flex items-center p-2 rounded-xl">
+                          <input type="file" accept="image/*" onChange={e => {
+                            if (e.target.files && e.target.files[0]) {
+                              setImageFile(e.target.files[0]);
+                              setForm({ ...form, image_url: '' }); // Clear url if file is uploaded
+                            }
+                          }} className="w-full text-xs text-neutral-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-900 dark:file:text-primary-300 cursor-pointer" />
+                        </div>
                       </div>
                     </div>
                   </div>

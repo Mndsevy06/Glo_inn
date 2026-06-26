@@ -7,7 +7,7 @@ const router = Router();
 router.use(verifyToken);
 
 // POST /api/orders
-router.post('/', verifyRole(['gerant', 'receptionniste']), createOrder);
+router.post('/', verifyRole(['gerant', 'receptionniste', 'client']), createOrder);
 
 // GET /api/orders
 router.get('/', verifyRole(['gerant', 'receptionniste']), getOrders);

@@ -14,7 +14,6 @@ import { CurrencyMenu } from '@/components/ui/CurrencyMenu';
 
 const allSidebarItems = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord', roles: ['gerant', 'receptionniste'] },
-  { path: '/dashboard/new-order', icon: ShoppingCart, label: 'Nouvelle Commande', roles: ['receptionniste'] },
   { path: '/dashboard/orders', icon: ClipboardList, label: 'Liste des Commandes', roles: ['receptionniste'] },
   { path: '/dashboard/reports', icon: BarChart3, label: 'Rapports', roles: ['gerant', 'receptionniste'] },
   { path: '/dashboard/menu', icon: UtensilsCrossed, label: 'Gestion du Menu', roles: ['gerant', 'receptionniste'] },
@@ -31,6 +30,7 @@ export function DashboardLayout() {
   const [searchQuery, setSearchQuery] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
+  const settingsBtnRef = useRef<HTMLButtonElement>(null);
 
   const currentCurrency = localStorage.getItem('pressing-gloria-currency') || 'CDF';
 
@@ -159,7 +159,7 @@ export function DashboardLayout() {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="glass-nav px-4 py-3 flex items-center justify-between lg:px-6">
+        <div className="glass-nav px-4 py-3 flex items-center justify-between lg:px-6 relative z-30">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -194,6 +194,7 @@ export function DashboardLayout() {
             
             <div className="relative" ref={settingsRef}>
               <button
+                ref={settingsBtnRef}
                 onClick={() => setSettingsOpen(!settingsOpen)}
                 className="p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
                 aria-label="Paramètres"
@@ -202,25 +203,33 @@ export function DashboardLayout() {
                 <Settings className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
               </button>
 
-              {settingsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-xl overflow-hidden z-50">
-                  <button
-                    onClick={() => { toggleThemeAndSave(); setSettingsOpen(false); }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+              <AnimatePresence>
+                {settingsOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-2xl overflow-hidden z-[9999]"
                   >
-                    {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                    <span>{isDark ? 'Mode Clair' : 'Mode Sombre'}</span>
-                  </button>
-                  <div className="h-px bg-neutral-200 dark:bg-neutral-700 mx-3" />
-                  <button
-                    onClick={() => { toggleCurrency(); setSettingsOpen(false); }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
-                  >
-                    {currentCurrency === 'CDF' ? <DollarSign className="w-4 h-4" /> : <Coins className="w-4 h-4" />}
-                    <span>Passer en {currentCurrency === 'CDF' ? 'USD' : 'CDF'}</span>
-                  </button>
-                </div>
-              )}
+                    <button
+                      onClick={() => { toggleThemeAndSave(); setSettingsOpen(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+                    >
+                      {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                      <span>{isDark ? 'Mode Clair' : 'Mode Sombre'}</span>
+                    </button>
+                    <div className="h-px bg-neutral-200 dark:bg-neutral-700 mx-3" />
+                    <button
+                      onClick={() => { toggleCurrency(); setSettingsOpen(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+                    >
+                      {currentCurrency === 'CDF' ? <DollarSign className="w-4 h-4" /> : <Coins className="w-4 h-4" />}
+                      <span>Passer en {currentCurrency === 'CDF' ? 'USD' : 'CDF'}</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>

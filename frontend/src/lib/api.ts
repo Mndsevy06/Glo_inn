@@ -16,7 +16,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ message: 'Erreur réseau.' }));
-    throw new Error(body.message || 'Erreur serveur.');
+    const err: any = new Error(body.message || 'Erreur serveur.');
+    err.status = res.status;
+    err.data = body;
+    throw err;
   }
 
   return res.json();
@@ -220,6 +223,7 @@ export const clientApi = {
 
 // ─── Payments (PawaPay Mobile Money) ─────────────────────────────────────────
 export const paymentsApi = {
+  // PawaPay (Legacy/Alternative)
   initiate: (data: { id_facture: string; telephone: string }) =>
     request<{ message: string; depositId: string; operateur: string }>('/payments/initiate', {
       method: 'POST',
@@ -227,6 +231,15 @@ export const paymentsApi = {
     }),
   checkStatus: (depositId: string) =>
     request<any>(`/payments/status/${depositId}`),
+    
+  // Netikash (Redirect flow)
+  initiateNetikash: (data: { id_facture: string }) =>
+    request<{ message: string; link: string; requestId: string; paiement: any }>('/payments/netikash/initiate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  checkNetikashStatus: (requestId: string) =>
+    request<any>(`/payments/netikash/status/${requestId}`),
 };
 
 // ─── Configuration ────────────────────────────────────────────────────────────

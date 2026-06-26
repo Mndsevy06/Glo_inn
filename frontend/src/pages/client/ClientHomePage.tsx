@@ -10,7 +10,8 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useSocket } from '@/context/SocketContext';
 
-const statusConfig = {
+const statusConfig: Record<string, any> = {
+  en_attente: { label: 'En attente', icon: Clock, color: 'text-error-500', bg: 'bg-error-500/10', border: 'border-error-500/20' },
   depose: { label: 'Depose', icon: Package, color: 'text-warning-500', bg: 'bg-warning-500/10', border: 'border-warning-500/20' },
   en_cours: { label: 'En cours', icon: Clock, color: 'text-primary-500', bg: 'bg-primary-500/10', border: 'border-primary-500/20' },
   pret: { label: 'Pret', icon: CheckCircle, color: 'text-success-500', bg: 'bg-success-500/10', border: 'border-success-500/20' },
@@ -18,6 +19,7 @@ const statusConfig = {
 };
 
 const statusSteps = [
+  { key: 'en_attente', label: 'En attente', description: 'Votre commande est en attente de validation' },
   { key: 'depose', label: 'Depose', description: 'Vos vetements ont ete recus' },
   { key: 'en_cours', label: 'En cours', description: 'Nettoyage en progression' },
   { key: 'pret', label: 'Pret', description: 'Vos vetements sont prets' },
@@ -81,8 +83,8 @@ export function ClientHomePage() {
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">Commande en cours</p>
                 <p className="font-semibold text-neutral-900 dark:text-neutral-100">{activeOrder.id.toUpperCase()}</p>
               </div>
-              <Badge variant={activeOrder.etat === 'pret' ? 'success' : activeOrder.etat === 'en_cours' ? 'primary' : 'warning'}>
-                {statusConfig[activeOrder.etat].label}
+              <Badge variant={activeOrder.etat === 'pret' ? 'success' : activeOrder.etat === 'en_cours' ? 'primary' : activeOrder.etat === 'en_attente' ? 'error' : 'warning'}>
+                {statusConfig[activeOrder.etat]?.label ?? activeOrder.etat}
               </Badge>
             </div>
 
@@ -184,7 +186,7 @@ export function ClientHomePage() {
           </div>
           <div className="space-y-3">
             {orders.slice(0, 3).map((order) => {
-              const config = statusConfig[order.etat];
+              const config = statusConfig[order.etat] ?? statusConfig['depose'];
               const StatusIcon = config.icon;
               return (
                 <div key={order.id} className="glass-panel p-3 flex items-center gap-3">

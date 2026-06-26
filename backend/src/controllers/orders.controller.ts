@@ -5,7 +5,9 @@ import prisma from '../config/db';
 export const createOrder = async (req: Request, res: Response): Promise<void> => {
   try {
     const { clientId, newClient, cart, expectedDate } = req.body;
-    const id_receptionniste = (req as any).user.id;
+    const userRole = (req as any).user.role;
+    const isClient = userRole === 'client';
+    const id_receptionniste = isClient ? null : (req as any).user.id;
 
     if (!cart || cart.length === 0) {
       res.status(400).json({ message: 'Le panier est vide.' });
@@ -78,17 +80,19 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
 
     const commande = await prisma.commande.create({
       data: {
-        id_client: finalClientId,
-        id_receptionniste,
+        client: { connect: { id: finalClientId } },
+        ...(id_receptionniste && { receptionniste: { connect: { id: id_receptionniste } } }),
         date_retrait_prevue: dateRetrait,
-        etat: 'depose',
+        etat: isClient ? 'en_attente' : 'depose',
         montant_total: montantTotal,
         statut_paiement: 'Non_payee',
         lignes: {
           create: lignesData.map(l => ({
-            ...l,
-            // Types enums matching
-            type_service: l.type_service as 'Normal' | 'Express'
+            quantite: l.quantite,
+            type_service: l.type_service as 'Normal' | 'Express',
+            note_etat: l.note_etat,
+            sous_total: l.sous_total,
+            service: { connect: { id: l.id_service } }
           }))
         }
       },
@@ -105,7 +109,7 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
 
     const facture = await prisma.facture.create({
       data: {
-        id_commande: commande.id,
+        commande: { connect: { id: commande.id } },
         numero: numeroFacture,
         montant_total: montantTotal,
         statut_paiement: 'Non_payee',

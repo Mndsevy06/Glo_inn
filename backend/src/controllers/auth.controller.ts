@@ -58,6 +58,55 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+export const register = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { nom, telephone, adresse, username, password } = req.body;
+
+    if (!nom || !telephone || !username || !password) {
+      res.status(400).json({ message: 'Champs obligatoires manquants (nom, telephone, username, password).' });
+      return;
+    }
+
+    // Vérifier unicité du username
+    const existing = await prisma.utilisateur.findUnique({ where: { username } });
+    if (existing) {
+      res.status(409).json({ message: `Le nom d'utilisateur "${username}" est déjà pris.` });
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await prisma.utilisateur.create({
+      data: {
+        nom,
+        telephone,
+        adresse: adresse || '',
+        role: 'client',
+        username,
+        password: hashedPassword,
+        actif: true,
+      }
+    });
+
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    const { password: _, ...userData } = user;
+
+    res.status(201).json({ 
+      message: 'Inscription réussie.',
+      token,
+      user: userData
+    });
+  } catch (error) {
+    console.error('Erreur lors de l\'inscription:', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+};
+
 export const updateSettings = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user?.id;

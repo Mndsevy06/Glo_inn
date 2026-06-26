@@ -27,9 +27,17 @@ export function LandingPage() {
               </div>
               <span className="text-xl font-bold font-display gradient-text">Pressing Gloria</span>
             </div>
-            <GlassButton variant="primary" size="sm" onClick={() => navigate('/login')} icon={<ArrowRight className="w-4 h-4" />}>
-              Se connecter
-            </GlassButton>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => navigate('/login')}
+                className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
+              >
+                Se connecter
+              </button>
+              <GlassButton variant="primary" size="sm" onClick={() => navigate('/register')} icon={<ArrowRight className="w-4 h-4" />}>
+                S'inscrire
+              </GlassButton>
+            </div>
           </div>
         </header>
 
@@ -56,11 +64,14 @@ export function LandingPage() {
               Decouvrez un pressing haut de gamme qui combine expertise traditionnelle et technologie moderne. Suivi en temps reel, paiement digital, et service premium.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <GlassButton variant="primary" size="lg" onClick={() => navigate('/menu')} icon={<ArrowRight className="w-5 h-5" />}>
+              <GlassButton variant="primary" size="lg" onClick={() => navigate('/register')} icon={<ArrowRight className="w-5 h-5" />}>
+                Créer un compte
+              </GlassButton>
+              <GlassButton variant="secondary" size="lg" onClick={() => navigate('/menu')}>
                 Voir nos services
               </GlassButton>
-              <GlassButton variant="secondary" size="lg" onClick={() => navigate('/login')}>
-                Suivre ma commande
+              <GlassButton variant="secondary" size="lg" onClick={() => navigate('/login')} className="hidden sm:flex">
+                Se connecter
               </GlassButton>
             </div>
           </motion.div>

@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { initiatePayment, handleWebhook, checkPaymentStatus } from '../controllers/payments.controller';
+import { initiatePayment, handleWebhook, checkPaymentStatus, initiateNetikashPayment, handleNetikashWebhook, checkNetikashPaymentStatus } from '../controllers/payments.controller';
 import { verifyToken } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -37,5 +37,16 @@ router.post('/initiate', initiatePayment);
 
 // GET /api/payments/status/:depositId — Check status of a deposit
 router.get('/status/:depositId', checkPaymentStatus);
+
+// ─── Netikash routes ──────────────────────────────────────────────────────────
+
+// Webhook (no auth — called by Netikash servers)
+router.post('/netikash/webhook', captureRawBody, handleNetikashWebhook);
+
+// POST /api/payments/netikash/initiate — Client initiates a Netikash payment
+router.post('/netikash/initiate', initiateNetikashPayment);
+
+// GET /api/payments/netikash/status/:requestId — Check status of a Netikash payment
+router.get('/netikash/status/:requestId', checkNetikashPaymentStatus);
 
 export default router;

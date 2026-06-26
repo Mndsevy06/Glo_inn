@@ -14,6 +14,7 @@ import { useSocket } from '@/context/SocketContext';
 import { useToast } from '@/context/ToastContext';
 
 const statusConfig: Record<string, any> = {
+  en_attente: { label: 'En attente de validation', icon: Clock, color: 'text-error-500', bg: 'bg-error-500/10', border: 'border-error-500/20' },
   depose:  { label: 'Deposé',   icon: Package,      color: 'text-warning-500', bg: 'bg-warning-500/10',  border: 'border-warning-500/20' },
   en_cours:{ label: 'En cours', icon: Clock,        color: 'text-primary-500', bg: 'bg-primary-500/10',  border: 'border-primary-500/20' },
   pret:    { label: 'Prêt',     icon: CheckCircle,  color: 'text-success-500', bg: 'bg-success-500/10',  border: 'border-success-500/20' },
@@ -42,28 +43,29 @@ function PaymentModal({
 
   const [telephone, setTelephone] = useState(user?.telephone || '');
   const [step, setStep] = useState<'form' | 'pending' | 'success' | 'error'>('form');
-  const [depositId, setDepositId] = useState<string | null>(null);
-  const [operateur, setOperateur] = useState<string | null>(null);
+  const [requestId, setRequestId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const facture = order.facture;
 
-  // Poll PawaPay status every 5 seconds when pending
+  // Poll status every 5 seconds when pending
   useEffect(() => {
-    if (step !== 'pending' || !depositId) return;
+    if (step !== 'pending') return;
+    if (!requestId) return;
 
     pollRef.current = setInterval(async () => {
       try {
-        const res = await paymentsApi.checkStatus(depositId);
-        const liveStatus = res?.pawapay_live?.[0]?.status || res?.paiement?.pawapay_status;
-        if (liveStatus === 'COMPLETED') {
+        const res = await paymentsApi.checkNetikashStatus(requestId);
+        const liveStatus = (res?.netikash_live?.status || res?.paiement?.netikash_status)?.toLowerCase();
+        
+        if (['approved', 'completed', 'success', 'successful'].includes(liveStatus)) {
           clearInterval(pollRef.current!);
           setStep('success');
           addToast('✅ Paiement confirmé !', 'success');
           onSuccess();
-        } else if (liveStatus === 'FAILED' || liveStatus === 'REVERSED') {
+        } else if (['failed', 'canceled', 'expired', 'error'].includes(liveStatus)) {
           clearInterval(pollRef.current!);
           setErrorMsg('Le paiement a échoué ou a été annulé. Veuillez réessayer.');
           setStep('error');
@@ -74,7 +76,7 @@ function PaymentModal({
     }, 5000);
 
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [step, depositId]);
+  }, [step, requestId]);
 
   // Also listen for WebSocket confirmation (faster than polling)
   useEffect(() => {
@@ -98,9 +100,11 @@ function PaymentModal({
     }
     setIsSubmitting(true);
     try {
-      const res = await paymentsApi.initiate({ id_facture: facture.id, telephone });
-      setDepositId(res.depositId);
-      setOperateur(res.operateur);
+      const res = await paymentsApi.initiateNetikash({ id_facture: facture.id });
+      setRequestId(res.requestId);
+      
+      // Redirection vers Netikash
+      window.open(res.link, '_blank');
       setStep('pending');
     } catch (err: any) {
       setErrorMsg(err.message || 'Erreur lors de l\'initiation du paiement.');
@@ -157,43 +161,7 @@ function PaymentModal({
                   </span>
                 </div>
 
-                {/* Supported operators */}
-                <div>
-                  <p className="text-xs text-neutral-500 mb-2 font-medium uppercase tracking-wide">Opérateurs supportés</p>
-                  <div className="flex gap-3 justify-center">
-                    {Object.entries(operateurLabels).map(([key, val]) => (
-                      <div key={key} className="flex flex-col items-center gap-1.5">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold shadow-sm ${val.bg}`}>
-                          {val.label.charAt(0)}
-                        </div>
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${val.color}`}>
-                          {val.label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Phone input */}
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                    Numéro de téléphone Mobile Money
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-500 font-medium">+243</span>
-                    <input
-                      type="tel"
-                      value={telephone}
-                      onChange={(e) => setTelephone(e.target.value)}
-                      placeholder="0975 123 456"
-                      className="glass-input w-full pl-14 py-3"
-                      required
-                    />
-                  </div>
-                  <p className="text-xs text-neutral-400 mt-1.5">
-                    L'opérateur sera détecté automatiquement selon votre numéro.
-                  </p>
-                </div>
+                {/* Netikash only has one method, no need for choice buttons or phone inputs */}
 
                 <GlassButton
                   type="submit"
@@ -205,7 +173,7 @@ function PaymentModal({
                 </GlassButton>
 
                 <p className="text-xs text-center text-neutral-400">
-                  Sécurisé par <span className="font-bold text-neutral-600 dark:text-neutral-300">PawaPay</span> · Vous recevrez une confirmation USSD sur votre téléphone.
+                  Sécurisé par <span className="font-bold text-neutral-600 dark:text-neutral-300">Netikash</span>
                 </p>
               </form>
             )}
@@ -220,22 +188,15 @@ function PaymentModal({
                   <h3 className="font-bold text-lg text-neutral-900 dark:text-neutral-100">
                     En attente de confirmation
                   </h3>
-                  {operateur && (
-                    <p className={`text-sm font-medium mt-1 ${operateurLabels[operateur]?.color}`}>
-                      via {operateurLabels[operateur]?.label}
-                    </p>
-                  )}
                   <p className="text-sm text-neutral-500 mt-2 leading-relaxed">
-                    Vérifiez votre téléphone <strong>({telephone})</strong>.
-                    Un message USSD vous demande de confirmer le paiement avec votre PIN.
+                    Complétez le paiement sur la page web sécurisée Netikash qui vient de s'ouvrir.
                   </p>
                 </div>
                 <div className="glass-panel p-4 text-left space-y-2">
                   <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wide">Instructions :</p>
                   <ol className="text-xs text-neutral-600 dark:text-neutral-400 space-y-1 list-decimal list-inside">
-                    <li>Consultez la notification sur votre téléphone</li>
-                    <li>Entrez votre PIN Mobile Money</li>
-                    <li>La page se mettra à jour automatiquement</li>
+                    <li>Payez sur la fenêtre Netikash</li>
+                    <li>La page se mettra à jour automatiquement une fois le paiement validé</li>
                   </ol>
                 </div>
                 <div className="flex items-center justify-center gap-2 text-xs text-neutral-400">

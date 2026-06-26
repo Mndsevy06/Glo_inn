@@ -11,6 +11,7 @@ import { useOutletContext } from 'react-router-dom';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const statusConfig: Record<string, any> = {
+  en_attente: { label: 'En attente (Client)', icon: Clock, color: 'text-error-500', bg: 'bg-error-500/10', border: 'border-error-500/20' },
   depose: { label: 'Depose', icon: Package, color: 'text-warning-500', bg: 'bg-warning-500/10', border: 'border-warning-500/20' },
   en_cours: { label: 'En cours', icon: Clock, color: 'text-primary-500', bg: 'bg-primary-500/10', border: 'border-primary-500/20' },
   pret: { label: 'Pret', icon: CheckCircle, color: 'text-success-500', bg: 'bg-success-500/10', border: 'border-success-500/20' },
@@ -111,7 +112,6 @@ export function OrdersListPage() {
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 font-display">Liste des Commandes</h1>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">Suivi et gestion de toutes les commandes</p>
         </div>
-        <GlassButton variant="primary" icon={<QrCode className="w-4 h-4" />}>Scanner QR</GlassButton>
       </div>
 
       {/* Stats Cards */}
@@ -154,6 +154,7 @@ export function OrdersListPage() {
             className="glass-input py-2 text-sm pr-8"
           >
             <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="">Tous les statuts</option>
+            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="en_attente">En file d'attente</option>
             <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="depose">Depose</option>
             <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="en_cours">En cours</option>
             <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="pret">Pret</option>
@@ -266,6 +267,13 @@ export function OrdersListPage() {
                             <Lock className="w-3.5 h-3.5" />
                             <span className="font-medium">Retiré</span>
                           </div>
+                        ) : order.etat === 'en_attente' ? (
+                          <button
+                            className="bg-primary-500 hover:bg-primary-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-md transition-colors"
+                            onClick={(e) => { e.stopPropagation(); handleStatusChange(order.id, 'depose'); }}
+                          >
+                            Valider
+                          </button>
                         ) : (
                           <select
                             className="glass-input py-1 px-2 text-xs w-28"

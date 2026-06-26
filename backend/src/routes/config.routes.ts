@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getConfig, updateConfig } from '../controllers/config.controller';
-import { verifyToken, isGerant } from '../middlewares/auth.middleware';
+import { verifyToken } from '../middlewares/auth.middleware';
 
 const router = Router();
 

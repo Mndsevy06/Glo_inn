@@ -8,9 +8,11 @@ import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { LandingPage } from '@/pages/public/LandingPage';
 import { MenuPage } from '@/pages/public/MenuPage';
 import { LoginPage } from '@/pages/public/LoginPage';
+import { RegisterPage } from '@/pages/public/RegisterPage';
 import { ClientHomePage } from '@/pages/client/ClientHomePage';
 import { ClientOrdersPage } from '@/pages/client/ClientOrdersPage';
 import { ClientNotificationsPage } from '@/pages/client/ClientNotificationsPage';
+import { ClientNewOrderPage } from '@/pages/client/ClientNewOrderPage';
 import { DashboardHomePage } from '@/pages/dashboard/DashboardHomePage';
 import { NewOrderPage } from '@/pages/dashboard/NewOrderPage';
 import { OrdersListPage } from '@/pages/dashboard/OrdersListPage';
@@ -37,11 +39,13 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/menu" element={<MenuPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
 
               {/* Client */}
               <Route path="/client" element={<RequireAuth allowedRoles={['client']}><ClientLayout /></RequireAuth>}>
                 <Route index element={<ClientHomePage />} />
                 <Route path="orders" element={<ClientOrdersPage />} />
+                <Route path="new-order" element={<ClientNewOrderPage />} />
                 <Route path="notifications" element={<ClientNotificationsPage />} />
               </Route>
 

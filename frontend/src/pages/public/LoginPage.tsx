@@ -22,9 +22,9 @@ export function LoginPage() {
       return;
     }
     setLoading(true);
-    
+
     const result = await login(username, password);
-    
+
     if (result.success && result.role) {
       addToast('Connexion réussie !', 'success');
       if (result.role === 'client') {
@@ -52,7 +52,7 @@ export function LoginPage() {
         transition={{ duration: 0.5, ease: 'easeOut' }}
         className="relative z-10 w-full max-w-md mx-4"
       >
-        <button 
+        <button
           onClick={() => navigate('/')}
           className="absolute -top-12 left-0 flex items-center gap-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors bg-white/10 dark:bg-black/10 px-3 py-1.5 rounded-full backdrop-blur-sm"
         >
@@ -68,7 +68,7 @@ export function LoginPage() {
               Bienvenue
             </h1>
             <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-              Connectez-vous a Pressing Gloria
+              Connectez-vous au Pressing Gloria
             </p>
           </div>
 
@@ -102,6 +102,16 @@ export function LoginPage() {
             >
               {loading ? 'Connexion...' : 'Se connecter'}
             </GlassButton>
+
+            <div className="text-center mt-4 text-sm text-neutral-600 dark:text-neutral-400">
+              Pas encore de compte ?{' '}
+              <button
+                onClick={() => navigate('/register')}
+                className="text-primary-600 dark:text-primary-400 font-medium hover:underline"
+              >
+                S'inscrire
+              </button>
+            </div>
           </div>
 
 
