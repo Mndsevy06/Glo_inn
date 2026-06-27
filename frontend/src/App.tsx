@@ -19,6 +19,7 @@ import { OrdersListPage } from '@/pages/dashboard/OrdersListPage';
 import { ReportsPage } from '@/pages/dashboard/ReportsPage';
 import { UsersPage } from '@/pages/dashboard/UsersPage';
 import { MenuManagementPage } from '@/pages/dashboard/MenuManagementPage';
+import { AvisPage } from '@/pages/dashboard/AvisPage';
 
 function RequireAuth({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
   const { user, isAuthenticated } = useAuth();
@@ -57,6 +58,7 @@ function App() {
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="users" element={<UsersPage />} />
                 <Route path="menu" element={<MenuManagementPage />} />
+                <Route path="avis" element={<AvisPage />} />
               </Route>
 
               <Route path="*" element={<Navigate to="/" replace />} />

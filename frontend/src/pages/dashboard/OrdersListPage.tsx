@@ -11,7 +11,7 @@ import { useOutletContext } from 'react-router-dom';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const statusConfig: Record<string, any> = {
-  en_attente: { label: 'En attente (Client)', icon: Clock, color: 'text-error-500', bg: 'bg-error-500/10', border: 'border-error-500/20' },
+  en_attente: { label: 'Attente confirmation dépôt', icon: Clock, color: 'text-error-500', bg: 'bg-error-500/10', border: 'border-error-500/20' },
   depose: { label: 'Depose', icon: Package, color: 'text-warning-500', bg: 'bg-warning-500/10', border: 'border-warning-500/20' },
   en_cours: { label: 'En cours', icon: Clock, color: 'text-primary-500', bg: 'bg-primary-500/10', border: 'border-primary-500/20' },
   pret: { label: 'Pret', icon: CheckCircle, color: 'text-success-500', bg: 'bg-success-500/10', border: 'border-success-500/20' },

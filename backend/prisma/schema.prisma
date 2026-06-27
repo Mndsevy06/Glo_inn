@@ -51,6 +51,7 @@ model Utilisateur {
   notifications    Notification[]
   theme            String         @default("light")
   currency         String         @default("CDF")
+  avis             Avis[]         @relation("ClientAvis")
 
   @@map("utilisateurs")
 }
@@ -92,6 +93,7 @@ model Commande {
   lignes              LigneCommande[]
   facture             Facture?
   notifications       Notification[]
+  avis                Avis?
 
   @@map("commandes")
 }
@@ -157,4 +159,18 @@ model Notification {
   commande       Commande?   @relation(fields: [id_commande], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+
+model Avis {
+  id             String      @id @default(uuid()) @db.Uuid
+  id_commande    String      @unique @db.Uuid
+  commande       Commande    @relation(fields: [id_commande], references: [id], onDelete: Cascade)
+  id_client      String      @db.Uuid
+  client         Utilisateur @relation("ClientAvis", fields: [id_client], references: [id], onDelete: Cascade)
+  note           Int         
+  commentaire    String?     @db.Text
+  lu             Boolean     @default(false)
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  @@map("avis")
 }

@@ -12,7 +12,8 @@ export const getMyOrders = async (req: Request, res: Response): Promise<void> =>
       where: { id_client: id },
       include: {
         lignes: { include: { service: true } },
-        facture: true
+        facture: true,
+        avis: true,
       },
       orderBy: { date_reception: 'desc' }
     });

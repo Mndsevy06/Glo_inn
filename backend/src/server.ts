@@ -36,6 +36,7 @@ import ordersRoutes from './routes/orders.routes';
 import clientRoutes from './routes/client.routes';
 import paymentsRoutes from './routes/payments.routes';
 import configRoutes from './routes/config.routes';
+import avisRoutes from './routes/avis.routes';
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -47,6 +48,7 @@ app.use('/api/orders', ordersRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/config', configRoutes);
+app.use('/api/avis', avisRoutes);
 
 app.get('/', (req, res) => {
   res.status(200).send('API Pressing Gloria en ligne !');

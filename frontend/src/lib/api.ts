@@ -251,3 +251,27 @@ export const configApi = {
       body: JSON.stringify({ taux_echange }),
     }),
 };
+
+// ─── Avis (Reviews) ──────────────────────────────────────────────────────────
+export const avisApi = {
+  // Client : soumettre un avis sur une commande payée
+  submit: (data: { id_commande: string; note: number; commentaire?: string }) =>
+    request<{ message: string; avis: any }>('/avis', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Gérant : liste tous les avis
+  getAll: () => request<any[]>('/avis'),
+
+  // Gérant : nombre d'avis non lus (badge)
+  getUnreadCount: () => request<{ count: number }>('/avis/unread-count'),
+
+  // Gérant : marquer un avis comme lu
+  markRead: (id: string) =>
+    request<{ message: string }>(`/avis/${id}/read`, { method: 'PATCH' }),
+
+  // Gérant : tout marquer comme lu
+  markAllRead: () =>
+    request<{ message: string }>('/avis/read-all', { method: 'PATCH' }),
+};

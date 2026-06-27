@@ -2,12 +2,12 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { useAuth } from '@/context/AuthContext';
-import { clientApi, paymentsApi } from '@/lib/api';
+import { clientApi, paymentsApi, avisApi } from '@/lib/api';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, Clock, CheckCircle, CreditCard, ChevronRight,
-  Smartphone, X, Loader2, CheckCircle2, AlertCircle, Wifi
+  Smartphone, X, Loader2, CheckCircle2, AlertCircle, Wifi, Star, MessageSquare
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useSocket } from '@/context/SocketContext';
@@ -243,6 +243,117 @@ function PaymentModal({
   );
 }
 
+// ─── Avis Modal ──────────────────────────────────────────────────────────────
+function AvisModal({ order, onClose }: { order: any; onClose: () => void }) {
+  const { addToast } = useToast();
+  const [note, setNote] = useState(0);
+  const [hovered, setHovered] = useState(0);
+  const [commentaire, setCommentaire] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const handleSubmit = async () => {
+    if (note === 0) { addToast('Veuillez choisir une note.', 'warning'); return; }
+    setSubmitting(true);
+    try {
+      await avisApi.submit({ id_commande: order.id, note, commentaire });
+      setDone(true);
+      addToast('✅ Merci pour votre avis !', 'success');
+    } catch (err: any) {
+      addToast(err.message || 'Erreur lors de l\'envoi.', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md"
+      >
+        <GlassCard className="p-0 overflow-hidden" hover={false}>
+          <div className="p-5 border-b border-white/20 dark:border-white/10 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                <Star className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-bold text-neutral-900 dark:text-neutral-100">Laisser un avis</h2>
+                <p className="text-xs text-neutral-500">Commande #{order.id.split('-')[0].toUpperCase()}</p>
+              </div>
+            </div>
+            <button type="button" onClick={onClose} className="p-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/10 text-neutral-500 transition-colors" aria-label="Fermer">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="p-6 space-y-5">
+            {done ? (
+              <div className="text-center py-4 space-y-3">
+                <div className="w-16 h-16 rounded-full bg-success-500/10 border-4 border-success-500/20 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-8 h-8 text-success-500" />
+                </div>
+                <p className="font-semibold text-neutral-900 dark:text-neutral-100">Merci pour votre retour !</p>
+                <GlassButton variant="primary" className="w-full" onClick={onClose}>Fermer</GlassButton>
+              </div>
+            ) : (
+              <>
+                <div className="text-center">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">Quelle note donnez-vous à cette commande ?</p>
+                  <div className="flex items-center justify-center gap-2">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <button
+                        key={s}
+                        onMouseEnter={() => setHovered(s)}
+                        onMouseLeave={() => setHovered(0)}
+                        onClick={() => setNote(s)}
+                        className="transition-transform hover:scale-125"
+                        aria-label={`Note ${s}`}
+                      >
+                        <Star className={`w-9 h-9 transition-colors ${
+                          s <= (hovered || note)
+                            ? 'text-amber-400 fill-amber-400'
+                            : 'text-neutral-300 dark:text-neutral-600'
+                        }`} />
+                      </button>
+                    ))}
+                  </div>
+                  {note > 0 && (
+                    <p className="text-xs text-neutral-500 mt-2">
+                      {['', 'Très mauvais', 'Mauvais', 'Moyen', 'Bien', 'Excellent !'][note]}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Commentaire (optionnel)</label>
+                  <textarea
+                    value={commentaire}
+                    onChange={(e) => setCommentaire(e.target.value)}
+                    rows={3}
+                    placeholder="Partagez votre expérience..."
+                    className="w-full glass-input px-3 py-2 text-sm resize-none rounded-xl"
+                  />
+                </div>
+                <GlassButton
+                  variant="primary"
+                  className="w-full"
+                  icon={submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4" />}
+                  onClick={handleSubmit}
+                >
+                  {submitting ? 'Envoi en cours...' : 'Envoyer mon avis'}
+                </GlassButton>
+              </>
+            )}
+          </div>
+        </GlassCard>
+      </motion.div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export function ClientOrdersPage() {
   const { user } = useAuth();
@@ -250,6 +361,7 @@ export function ClientOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [payingOrder, setPayingOrder] = useState<any | null>(null);
+  const [avisOrder, setAvisOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchOrders = async () => {
@@ -390,9 +502,26 @@ export function ClientOrdersPage() {
                         )}
 
                         {isPaid && (
-                          <div className="flex items-center justify-center gap-2 py-2 text-success-600 dark:text-success-400">
-                            <CheckCircle2 className="w-5 h-5" />
-                            <span className="text-sm font-medium">Facture entièrement payée</span>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-center gap-2 py-2 text-success-600 dark:text-success-400">
+                              <CheckCircle2 className="w-5 h-5" />
+                              <span className="text-sm font-medium">Facture entièrement payée</span>
+                            </div>
+                            {!order.avis ? (
+                              <GlassButton
+                                variant="secondary"
+                                className="w-full"
+                                icon={<Star className="w-4 h-4 text-amber-400" />}
+                                onClick={() => setAvisOrder(order)}
+                              >
+                                Laisser un avis
+                              </GlassButton>
+                            ) : (
+                              <div className="flex items-center justify-center gap-2 py-1 text-amber-500">
+                                <MessageSquare className="w-4 h-4" />
+                                <span className="text-xs font-medium">Avis déjà soumis — Merci !</span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -420,8 +549,18 @@ export function ClientOrdersPage() {
             onClose={() => setPayingOrder(null)}
             onSuccess={() => {
               setPayingOrder(null);
-              fetchOrders(); // Refresh order list to show updated payment status
+              fetchOrders();
             }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Avis Modal */}
+      <AnimatePresence>
+        {avisOrder && (
+          <AvisModal
+            order={avisOrder}
+            onClose={() => { setAvisOrder(null); fetchOrders(); }}
           />
         )}
       </AnimatePresence>

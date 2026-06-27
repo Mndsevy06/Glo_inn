@@ -6,15 +6,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingCart, ClipboardList, Users,
   BarChart3, LogOut, Moon, Sun, Shirt, Search, Menu, X, Bell,
-  ChevronRight, UtensilsCrossed, Coins, DollarSign, Settings
+  ChevronRight, UtensilsCrossed, Coins, DollarSign, Settings, Star
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-import { authApi, configApi, usersApi } from '@/lib/api';
+import { authApi, configApi, usersApi, avisApi } from '@/lib/api';
 import { CurrencyMenu } from '@/components/ui/CurrencyMenu';
 import { GlassInput } from '@/components/ui/GlassInput';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { Modal } from '@/components/ui/Modal';
 import { UserPlus } from 'lucide-react';
+import { useSocket } from '@/context/SocketContext';
 
 const allSidebarItems = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord', roles: ['gerant', 'receptionniste'] },
@@ -28,6 +29,7 @@ export function DashboardLayout() {
   const { user, logout } = useAuth();
   const { isDark, toggle } = useTheme();
   const { addToast } = useToast();
+  const { socket } = useSocket();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -35,6 +37,7 @@ export function DashboardLayout() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
+  const [unreadAvis, setUnreadAvis] = useState(0);
 
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [newClient, setNewClient] = useState({ nom: '', telephone: '', password: '123456' });
@@ -53,6 +56,20 @@ export function DashboardLayout() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Charge le compteur d'avis non lus (gérant seulement)
+  useEffect(() => {
+    if (user?.role !== 'gerant') return;
+    avisApi.getUnreadCount().then((r) => setUnreadAvis(r.count)).catch(() => {});
+  }, [user]);
+
+  // Écoute les nouveaux avis en temps réel
+  useEffect(() => {
+    if (!socket || user?.role !== 'gerant') return;
+    const handler = () => setUnreadAvis((n) => n + 1);
+    socket.on('new_avis', handler);
+    return () => socket.off('new_avis', handler);
+  }, [socket, user]);
 
   const handleCreatePhoneChange = (val: string) => {
     setNewClient(prev => {
@@ -260,14 +277,20 @@ export function DashboardLayout() {
               </button>
             )}
 
-            {user?.role !== 'gerant' && user?.role !== 'receptionniste' && (
-              <button 
+            {/* Icône Avis (gérant uniquement) */}
+            {user?.role === 'gerant' && (
+              <button
+                onClick={() => { navigate('/dashboard/avis'); setUnreadAvis(0); }}
                 className="relative p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
-                aria-label="Notifications"
-                title="Notifications"
+                aria-label="Avis clients"
+                title="Avis clients"
               >
-                <Bell className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-primary-500 rounded-full" />
+                <Star className="w-5 h-5 text-amber-500" />
+                {unreadAvis > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {unreadAvis > 99 ? '99+' : unreadAvis}
+                  </span>
+                )}
               </button>
             )}
             
