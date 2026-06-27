@@ -9,8 +9,12 @@ import {
   ChevronRight, UtensilsCrossed, Coins, DollarSign, Settings
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-import { authApi, configApi } from '@/lib/api';
+import { authApi, configApi, usersApi } from '@/lib/api';
 import { CurrencyMenu } from '@/components/ui/CurrencyMenu';
+import { GlassInput } from '@/components/ui/GlassInput';
+import { GlassButton } from '@/components/ui/GlassButton';
+import { Modal } from '@/components/ui/Modal';
+import { UserPlus } from 'lucide-react';
 
 const allSidebarItems = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord', roles: ['gerant', 'receptionniste'] },
@@ -32,6 +36,12 @@ export function DashboardLayout() {
   const settingsRef = useRef<HTMLDivElement>(null);
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
 
+  const [showCreateClient, setShowCreateClient] = useState(false);
+  const [newClient, setNewClient] = useState({ nom: '', telephone: '', password: '123456' });
+
+  const [rateModalOpen, setRateModalOpen] = useState(false);
+  const [rateInput, setRateInput] = useState(localStorage.getItem('pressing-gloria-rate') || '2800');
+
   const currentCurrency = localStorage.getItem('pressing-gloria-currency') || 'CDF';
 
   useEffect(() => {
@@ -43,6 +53,63 @@ export function DashboardLayout() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  const handleCreatePhoneChange = (val: string) => {
+    setNewClient(prev => {
+      const digitsOnly = val.replace(/[^0-9]/g, '');
+      const defaultPass = digitsOnly.length >= 6 ? digitsOnly.slice(-6) : '123456';
+      return {
+        ...prev,
+        telephone: val,
+        password: prev.password === '' || prev.password === '123456' || prev.password === prev.telephone.replace(/[^0-9]/g, '').slice(-6)
+          ? defaultPass
+          : prev.password
+      };
+    });
+  };
+
+  const handleCreateClient = async () => {
+    if (!newClient.nom || !newClient.telephone || !newClient.password) {
+      addToast('Veuillez remplir tous les champs obligatoires.', 'warning');
+      return;
+    }
+    const cleanedName = newClient.nom.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
+    const suffix = newClient.telephone.replace(/[^0-9]/g, '').slice(-4) || Math.random().toString(36).slice(2, 6);
+    const generatedUsername = `c_${cleanedName}_${suffix}`;
+
+    try {
+      await usersApi.create({
+        nom: newClient.nom,
+        telephone: newClient.telephone,
+        adresse: '',
+        role: 'client',
+        username: generatedUsername,
+        password: newClient.password
+      });
+      addToast('Client créé avec succès.', 'success');
+      setShowCreateClient(false);
+      setNewClient({ nom: '', telephone: '', password: '123456' });
+    } catch (error: any) {
+      addToast(error.message || 'Erreur lors de la création.', 'error');
+    }
+  };
+
+  const saveRate = async () => {
+    const num = Number(rateInput);
+    if (isNaN(num) || num <= 0) {
+      addToast('Taux invalide', 'error');
+      return;
+    }
+    try {
+      await configApi.update(num);
+      localStorage.setItem('pressing-gloria-rate', rateInput);
+      addToast(`Taux mis à jour : 1 USD = ${num} CDF`, 'success');
+      setRateModalOpen(false);
+      window.location.reload();
+    } catch {
+      addToast('Erreur lors de la mise à jour du taux', 'error');
+    }
+  };
 
   const toggleThemeAndSave = async () => {
     toggle();
@@ -181,6 +248,18 @@ export function DashboardLayout() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {user?.role === 'receptionniste' && (
+              <button 
+                onClick={() => setShowCreateClient(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400 hover:bg-primary-500/20 transition-colors text-sm font-medium"
+                aria-label="Créer Client"
+                title="Créer Client"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span className="hidden sm:inline">Nouveau Client</span>
+              </button>
+            )}
+
             {user?.role !== 'gerant' && user?.role !== 'receptionniste' && (
               <button 
                 className="relative p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
@@ -227,6 +306,18 @@ export function DashboardLayout() {
                       {currentCurrency === 'CDF' ? <DollarSign className="w-4 h-4" /> : <Coins className="w-4 h-4" />}
                       <span>Passer en {currentCurrency === 'CDF' ? 'USD' : 'CDF'}</span>
                     </button>
+                    {user?.role === 'gerant' && (
+                      <>
+                        <div className="h-px bg-neutral-200 dark:bg-neutral-700 mx-3" />
+                        <button
+                          onClick={() => { setSettingsOpen(false); setRateModalOpen(true); }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+                        >
+                          <Settings className="w-4 h-4" />
+                          <span>Définir le taux de change</span>
+                        </button>
+                      </>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -246,6 +337,74 @@ export function DashboardLayout() {
           </motion.div>
         </main>
       </div>
+
+      {/* Create Client Modal */}
+      <Modal isOpen={showCreateClient} onClose={() => setShowCreateClient(false)} title="Nouveau client" size="md">
+        <div className="space-y-4">
+          <GlassInput 
+            label="Nom complet *" 
+            placeholder="Ex: Jean Dupont" 
+            value={newClient.nom} 
+            onChange={(e) => setNewClient({...newClient, nom: e.target.value})} 
+          />
+          <GlassInput 
+            label="Téléphone ou Email *" 
+            placeholder="Ex: 082444555 ou client@example.com" 
+            value={newClient.telephone} 
+            onChange={(e) => handleCreatePhoneChange(e.target.value)} 
+          />
+          <GlassInput 
+            label="Mot de passe *" 
+            type="text" 
+            placeholder="Saisir ou modifier le mot de passe" 
+            value={newClient.password} 
+            onChange={(e) => setNewClient({...newClient, password: e.target.value})} 
+          />
+          <GlassButton
+            variant="primary"
+            className="w-full"
+            onClick={handleCreateClient}
+          >
+            Enregistrer le client
+          </GlassButton>
+        </div>
+      </Modal>
+
+      {/* Rate Modal */}
+      {rateModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setRateModalOpen(false)}>
+          <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-1">Taux de change</h2>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-5">Définissez combien de francs congolais vaut 1 dollar américain.</p>
+            <label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">1 USD =</label>
+            <div className="flex items-center gap-2 mt-2 mb-6">
+              <input
+                type="number"
+                min="1"
+                value={rateInput}
+                onChange={e => setRateInput(e.target.value)}
+                className="flex-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-700 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="2800"
+              />
+              <span className="text-lg font-bold text-neutral-600 dark:text-neutral-400">CDF</span>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRateModalOpen(false)}
+                className="flex-1 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={saveRate}
+                className="flex-1 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-bold transition-colors"
+              >
+                Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

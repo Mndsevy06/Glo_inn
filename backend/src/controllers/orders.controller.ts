@@ -128,6 +128,7 @@ export const getOrders = async (req: Request, res: Response): Promise<void> => {
     const orders = await prisma.commande.findMany({
       include: {
         client: { select: { nom: true, telephone: true } },
+        facture: true,
         lignes: { include: { service: true } },
         notifications: { orderBy: { date_envoi: 'asc' } }
       },

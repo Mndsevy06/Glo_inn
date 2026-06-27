@@ -29,11 +29,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Le champ "password" du frontend correspond au "password" haché ou au "telephone"
+    // Le champ "password" du frontend correspond au "password" haché, au "telephone", ou au "username" (email)
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     const isPhoneMatch = (user.telephone === password);
+    const isEmailMatch = (user.username === password);
 
-    if (!isPasswordMatch && !isPhoneMatch) {
+    if (!isPasswordMatch && !isPhoneMatch && !isEmailMatch) {
       res.status(401).json({ message: 'Identifiants incorrects.' });
       return;
     }

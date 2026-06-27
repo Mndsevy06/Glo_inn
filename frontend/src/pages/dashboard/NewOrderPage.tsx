@@ -478,39 +478,72 @@ export function NewOrderPage() {
 
       {/* Invoice Preview */}
       <Modal isOpen={showInvoice} onClose={closeAndReset} title="Aperçu de la facture" size="md">
-        <div className="space-y-4">
-          <div className="text-center">
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Pressing Gloria</p>
-            <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
-              {createdOrderData?.facture?.numero || 'INV-...'}
-            </p>
-            {selectedClient?.id === 'new' && createdOrderData?.commande?.client && (
-              <p className="text-xs text-primary-500 font-medium mt-1">
-                Identifiants Client: {createdOrderData.commande.client.username} / {newClient.password}
-              </p>
-            )}
-          </div>
-          <div className="glass-panel p-3 space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Client:</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{selectedClient?.nom}</span></div>
-            <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Telephone:</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{selectedClient?.id === 'new' ? newClient.telephone : selectedClient?.telephone}</span></div>
-            <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Date:</span><span className="font-medium text-neutral-900 dark:text-neutral-100">{new Date().toLocaleDateString('fr-FR')}</span></div>
-          </div>
-          <div className="space-y-2">
-            {cart.map((item) => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-neutral-700 dark:text-neutral-300">{item.service.libelle} x{item.quantite} ({item.type})</span>
-                <span className="font-medium text-neutral-900 dark:text-neutral-100">{formatCurrency(
-                  (item.type === 'Express' && item.service.tarif_express ? Number(item.service.tarif_express) : Number(item.service.tarif_unitaire)) * item.quantite
-                )}</span>
+        <div className="flex flex-col items-center">
+          {/* Ticket Container */}
+          <div id="print-ticket" className="w-[80mm] max-w-full bg-white text-black p-4 font-mono text-sm shadow-md print:shadow-none print:m-0 print:p-0">
+            <div className="text-center mb-4 border-b border-dashed border-black pb-4">
+              <h2 className="text-xl font-bold uppercase">Pressing Gloria</h2>
+              <p className="text-xs mt-1">Numéro: {createdOrderData?.facture?.numero || 'INV-...'}</p>
+              <p className="text-xs">{new Date().toLocaleDateString('fr-FR')} {new Date().toLocaleTimeString('fr-FR')}</p>
+            </div>
+            
+            <div className="mb-4 text-xs">
+              <p><span className="font-bold">Client:</span> {selectedClient?.nom}</p>
+              <p><span className="font-bold">Tel:</span> {selectedClient?.id === 'new' ? newClient.telephone : selectedClient?.telephone}</p>
+              {selectedClient?.id === 'new' && createdOrderData?.commande?.client && (
+                <div className="mt-2 p-2 border border-black border-dashed text-left">
+                  <p className="font-bold">Nouveaux Identifiants:</p>
+                  <p>User: {createdOrderData.commande.client.username}</p>
+                  <p>Pass: {newClient.password}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="border-b border-black border-dashed pb-2 mb-2 text-xs">
+              <div className="flex justify-between font-bold mb-1">
+                <span>Article</span>
+                <span>Total</span>
               </div>
-            ))}
-            <div className="border-t border-white/20 dark:border-white/10 pt-2 flex justify-between">
-              <span className="font-semibold text-neutral-900 dark:text-neutral-100">Total</span>
-              <span className="font-bold text-lg text-primary-600 dark:text-primary-400">{formatCurrency(total)}</span>
+              {cart.map((item) => (
+                <div key={item.id} className="flex justify-between mb-1">
+                  <span className="flex-1 pr-2 text-left">
+                    {item.quantite}x {item.service.libelle} {item.type === 'Express' ? '(Exp)' : ''}
+                  </span>
+                  <span>{formatCurrency(
+                    (item.type === 'Express' && item.service.tarif_express ? Number(item.service.tarif_express) : Number(item.service.tarif_unitaire)) * item.quantite
+                  )}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-between font-bold text-base mt-2">
+              <span>TOTAL</span>
+              <span>{formatCurrency(total)}</span>
+            </div>
+            
+            <div className="text-center mt-6 text-xs border-t border-dashed border-black pt-4">
+              <p>Merci de votre visite !</p>
+              <p>A bientôt chez Pressing Gloria</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <GlassButton variant="primary" className="flex-1" icon={<Printer className="w-4 h-4" />} onClick={() => window.print()}>
+          
+          {/* Action Buttons */}
+          <div className="flex gap-2 w-full mt-6 print:hidden">
+            <GlassButton variant="primary" className="flex-1" icon={<Printer className="w-4 h-4" />} onClick={() => {
+                const printContent = document.getElementById('print-ticket');
+                const windowPrint = window.open('', '', 'width=300,height=600');
+                if (windowPrint && printContent) {
+                  windowPrint.document.write('<html><head><title>Facture</title>');
+                  windowPrint.document.write('<style>body { font-family: monospace; margin: 0; padding: 10px; width: 80mm; } .text-center { text-align: center; } .text-left { text-align: left; } .flex { display: flex; } .justify-between { justify-content: space-between; } .font-bold { font-weight: bold; } .text-xl { font-size: 1.25rem; } .text-xs { font-size: 0.75rem; } .text-base { font-size: 1rem; } .text-sm { font-size: 0.875rem; } .mb-4 { margin-bottom: 1rem; } .mb-2 { margin-bottom: 0.5rem; } .mb-1 { margin-bottom: 0.25rem; } .mt-1 { margin-top: 0.25rem; } .mt-2 { margin-top: 0.5rem; } .mt-6 { margin-top: 1.5rem; } .pb-4 { padding-bottom: 1rem; } .pb-2 { padding-bottom: 0.5rem; } .pt-4 { padding-top: 1rem; } .pr-2 { padding-right: 0.5rem; } .border-b { border-bottom: 1px solid black; } .border-t { border-top: 1px solid black; } .border-dashed { border-style: dashed; } .uppercase { text-transform: uppercase; } .w-full { width: 100%; } .flex-1 { flex: 1; } .p-2 { padding: 0.5rem; } .border { border: 1px solid black; }</style>');
+                  windowPrint.document.write('</head><body>');
+                  windowPrint.document.write(printContent.outerHTML);
+                  windowPrint.document.write('</body></html>');
+                  windowPrint.document.close();
+                  windowPrint.focus();
+                  windowPrint.print();
+                  windowPrint.close();
+                }
+              }}>
               Imprimer
             </GlassButton>
             <GlassButton variant="secondary" className="flex-1" onClick={closeAndReset}>

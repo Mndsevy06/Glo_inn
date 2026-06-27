@@ -11,8 +11,8 @@ export function formatCurrency(amount: number): string {
   const rate = rateStr ? Number(rateStr) : (Number(import.meta.env.VITE_EXCHANGE_RATE) || 2800);
 
   let finalAmount = amount;
-  if (currency === 'USD') {
-    finalAmount = amount / rate;
+  if (currency === 'CDF') {
+    finalAmount = amount * rate;
   }
 
   return new Intl.NumberFormat('fr-FR', {

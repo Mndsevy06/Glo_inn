@@ -564,7 +564,7 @@ export function MenuManagementPage() {
 
             {step === 2 && (
               <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4 max-w-lg mx-auto w-full">
-                <GlassInput label="Tarif Normal (CDF) *" type="number" placeholder="Ex: 2500" value={form.tarif_unitaire}
+                <GlassInput label="Tarif Normal (USD) *" type="number" placeholder="Ex: 5" value={form.tarif_unitaire}
                   onChange={e => setForm({ ...form, tarif_unitaire: e.target.value })} />
 
                 {/* Express toggle */}
@@ -585,7 +585,7 @@ export function MenuManagementPage() {
                   </div>
                   {form.express_disponible && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
-                      <GlassInput label="Tarif Express (CDF)" type="number" placeholder="Ex: 4000" value={form.tarif_express}
+                      <GlassInput label="Tarif Express (USD)" type="number" placeholder="Ex: 10" value={form.tarif_express}
                         onChange={e => setForm({ ...form, tarif_express: e.target.value })} />
                     </motion.div>
                   )}

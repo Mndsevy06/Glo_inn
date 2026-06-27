@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { clientApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Package, Clock, CheckCircle, CreditCard, Bell, QrCode, ChevronRight } from 'lucide-react';
+import { Package, Clock, CheckCircle, CreditCard, Bell, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useSocket } from '@/context/SocketContext';
@@ -211,20 +211,7 @@ export function ClientHomePage() {
         </motion.div>
       )}
 
-      {/* Scan QR */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <GlassCard className="p-4 text-center cursor-pointer">
-          <div className="w-10 h-10 rounded-xl bg-accent-500/10 dark:bg-accent-500/20 flex items-center justify-center mx-auto mb-2">
-            <QrCode className="w-5 h-5 text-accent-500" />
-          </div>
-          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Scanner ma facture</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Scannez le QR code pour acceder a votre commande</p>
-        </GlassCard>
-      </motion.div>
+
     </div>
   );
 }

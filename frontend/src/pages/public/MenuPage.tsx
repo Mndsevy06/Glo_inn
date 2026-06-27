@@ -222,7 +222,7 @@ export function MenuPage() {
                 {/* Image or placeholder */}
                 <div className="relative h-44 overflow-hidden bg-gradient-to-br from-primary-500/10 to-secondary-500/20 flex items-center justify-center">
                   {service.image ? (
-                    <img src={`${API_URL.replace('/api', '')}${service.image}`} alt={service.libelle}
+                    <img src={service.image.startsWith('http') ? service.image : `${API_URL.replace('/api', '')}${service.image}`} alt={service.libelle}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
                   ) : (
                     <Shirt className="w-16 h-16 text-primary-300 dark:text-primary-700" />

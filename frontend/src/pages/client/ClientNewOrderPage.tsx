@@ -304,7 +304,7 @@ export function ClientNewOrderPage() {
                   
                   {service.image ? (
                     <div className="h-24 w-full shrink-0 overflow-hidden bg-neutral-100 dark:bg-neutral-800 border-b border-white/10 relative">
-                      <img src={`${API_URL.replace('/api', '')}${service.image}`} alt={service.libelle} className="w-full h-full object-cover" loading="lazy" />
+                      <img src={service.image.startsWith('http') ? service.image : `${API_URL.replace('/api', '')}${service.image}`} alt={service.libelle} className="w-full h-full object-cover" loading="lazy" />
                       {service.express_disponible && (
                         <div className="absolute top-1 right-1">
                           <Badge variant="warning" className="text-[9px] px-1 py-0 shadow-sm backdrop-blur-md bg-warning-500/90 text-white border-none">

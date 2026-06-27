@@ -74,16 +74,16 @@ export function LoginPage() {
 
           <div className="space-y-4">
             <GlassInput
-              label="Nom d'utilisateur ou Email"
-              placeholder="ex: jean_bosco ou jean@gmail.com"
+              label="Nom"
+              placeholder="Votre nom"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               icon={<LogIn className="w-4 h-4" />}
             />
             <GlassInput
-              label="Mot de passe ou Numéro de téléphone"
+              label="Mot de passe, Numéro de téléphone ou Email"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Votre mot de passe ou téléphone"
+              placeholder="Votre mot de passe, téléphone ou email"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               iconRight={
