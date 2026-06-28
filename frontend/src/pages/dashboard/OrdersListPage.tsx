@@ -1,21 +1,25 @@
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { GlassButton } from '@/components/ui/GlassButton';
-import { ordersApi } from '@/lib/api';
+import { ordersApi, servicesApi } from '@/lib/api';
 import { formatDate, formatCurrency, formatDateTime } from '@/lib/utils';
-import { motion } from 'framer-motion';
-import { Package, Clock, CheckCircle, QrCode, CreditCard, Search, Filter, CheckCircle2, Loader2, Bell, X, History, Lock, Printer } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Package, Clock, CheckCircle, QrCode, CreditCard, Search, Filter, CheckCircle2, Loader2, Bell, X, History, Lock, Printer, Eye, Edit3, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/context/ToastContext';
 import { useOutletContext } from 'react-router-dom';
+import { Modal } from '@/components/ui/Modal';
+import { OrderDetailsModal, OrderEditModal, PartialWithdrawModal } from '@/components/orders/OrderModals';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const statusConfig: Record<string, any> = {
   en_attente: { label: 'Attente confirmation dépôt', icon: Clock, color: 'text-error-500', bg: 'bg-error-500/10', border: 'border-error-500/20' },
   depose: { label: 'Depose', icon: Package, color: 'text-warning-500', bg: 'bg-warning-500/10', border: 'border-warning-500/20' },
   en_cours: { label: 'En cours', icon: Clock, color: 'text-primary-500', bg: 'bg-primary-500/10', border: 'border-primary-500/20' },
-  pret: { label: 'Pret', icon: CheckCircle, color: 'text-success-500', bg: 'bg-success-500/10', border: 'border-success-500/20' },
-  retire: { label: 'Retire', icon: CheckCircle2, color: 'text-neutral-500', bg: 'bg-neutral-500/10', border: 'border-neutral-500/20' },
+  pret: { label: 'Prêt', icon: CheckCircle, color: 'text-success-500', bg: 'bg-success-500/10', border: 'border-success-500/20' },
+  retrait_partiel: { label: 'Récupération Partielle', icon: Package, color: 'text-info-500', bg: 'bg-info-500/10', border: 'border-info-500/20' },
+  retire: { label: 'Récupération Complète', icon: CheckCircle2, color: 'text-neutral-500', bg: 'bg-neutral-500/10', border: 'border-neutral-500/20' },
+  annule: { label: 'Annulée', icon: X, color: 'text-error-600', bg: 'bg-error-600/10', border: 'border-error-600/20' },
 };
 
 export function OrdersListPage() {
@@ -27,6 +31,9 @@ export function OrdersListPage() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [remindersModalData, setRemindersModalData] = useState<{ id: string; rappels: any[] } | null>(null);
+  const [detailsModalOrder, setDetailsModalOrder] = useState<any | null>(null);
+  const [editModalOrder, setEditModalOrder] = useState<any | null>(null);
+  const [partialWithdrawOrder, setPartialWithdrawOrder] = useState<any | null>(null);
   const { searchQuery } = useOutletContext<{ searchQuery: string }>() || { searchQuery: '' };
 
   const fetchOrders = async () => {
@@ -214,8 +221,10 @@ export function OrdersListPage() {
             <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="en_attente">En file d'attente</option>
             <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="depose">Depose</option>
             <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="en_cours">En cours</option>
-            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="pret">Pret</option>
-            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="retire">Retire</option>
+            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="pret">Prêt</option>
+            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="retrait_partiel">Récupération Partielle</option>
+            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="retire">Récupération Complète</option>
+            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="annule">Annulée</option>
           </select>
         </div>
       </div>
@@ -232,9 +241,10 @@ export function OrdersListPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/20 dark:border-white/10 text-left text-xs text-neutral-500 dark:text-neutral-400">
+                <th className="px-4 py-3 font-medium">Infos</th>
                 <th className="px-4 py-3 font-medium">Commande</th>
                 <th className="px-4 py-3 font-medium">Client</th>
-                <th className="px-4 py-3 font-medium">Date</th>
+                <th className="px-4 py-3 font-medium">Date/Heure demande</th>
                 <th className="px-4 py-3 font-medium">Statut</th>
                 <th className="px-4 py-3 font-medium">Paiement</th>
                 <th className="px-4 py-3 font-medium">Rappels</th>
@@ -257,9 +267,28 @@ export function OrdersListPage() {
                     className={`hover:bg-white/30 dark:hover:bg-white/5 transition-colors ${isSelected ? 'bg-primary-500/5' : ''}`}
                     onClick={() => setSelectedOrder(isSelected ? null : order.id)}
                   >
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button
+                          className="p-1.5 rounded-lg hover:bg-neutral-500/10 text-neutral-500 dark:text-neutral-400"
+                          title="Détails de la commande"
+                          onClick={(e) => { e.stopPropagation(); setDetailsModalOrder(order); }}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          className={`p-1.5 rounded-lg ${order.statut_paiement === 'Payee' || order.etat === 'retire' || order.etat === 'annule' ? 'opacity-50 cursor-not-allowed text-neutral-400' : 'hover:bg-primary-500/10 text-primary-500'}`}
+                          title={order.statut_paiement === 'Payee' || order.etat === 'retire' || order.etat === 'annule' ? 'Modification non autorisée (payée, annulée ou retirée)' : 'Modifier la commande'}
+                          disabled={order.statut_paiement === 'Payee' || order.etat === 'retire' || order.etat === 'annule'}
+                          onClick={(e) => { e.stopPropagation(); setEditModalOrder(order); }}
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-4 py-3 font-medium text-neutral-900 dark:text-neutral-100">{order.id.split('-')[0].toUpperCase() || order.id.toUpperCase()}</td>
                     <td className="px-4 py-3 text-neutral-700 dark:text-neutral-300">{order.client?.nom}</td>
-                    <td className="px-4 py-3 text-neutral-500 dark:text-neutral-400">{formatDate(order.date_reception)}</td>
+                    <td className="px-4 py-3 text-neutral-500 dark:text-neutral-400">{formatDateTime(order.date_reception)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full border ${config.bg} ${config.color} ${config.border}`}>
                         <StatusIcon className="w-3.5 h-3.5" />
@@ -316,13 +345,13 @@ export function OrdersListPage() {
                     <td className="px-4 py-3 text-right font-medium text-neutral-900 dark:text-neutral-100">{formatCurrency(Number(order.montant_total))}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {order.etat === 'retire' ? (
+                        {order.etat === 'retire' || order.etat === 'annule' ? (
                           <div
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-xs text-neutral-500 dark:text-neutral-400 cursor-not-allowed"
-                            title="Commande retirée — statut verrouillé"
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-xs text-neutral-500 dark:text-neutral-400 cursor-not-allowed ${order.etat === 'annule' ? 'text-error-500 dark:text-error-400' : ''}`}
+                            title={`Commande ${order.etat} — statut verrouillé`}
                           >
                             <Lock className="w-3.5 h-3.5" />
-                            <span className="font-medium">Retiré</span>
+                            <span className="font-medium">{order.etat === 'retire' ? 'Retiré' : 'Annulée'}</span>
                           </div>
                         ) : order.etat === 'en_attente' ? (
                           <button
@@ -331,19 +360,34 @@ export function OrdersListPage() {
                           >
                             Valider
                           </button>
+                        ) : order.etat === 'depose' && order.statut_paiement !== 'Payee' ? (
+                          <div
+                            className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-warning-50 dark:bg-warning-500/5 border border-warning-200 dark:border-warning-500/20 text-xs text-warning-600 dark:text-warning-400 cursor-not-allowed"
+                            title="Le paiement doit être effectué avant de passer à l'étape suivante"
+                          >
+                            <Lock className="w-3.5 h-3.5" />
+                            <span className="font-medium">Déposé (Bloqué)</span>
+                          </div>
                         ) : (
                           <select
                             className="glass-input py-1 px-2 text-xs w-28"
                             value={order.etat}
-                            onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                            onChange={(e) => {
+                              if (e.target.value === 'retrait_partiel') {
+                                setPartialWithdrawOrder(order);
+                              } else {
+                                handleStatusChange(order.id, e.target.value);
+                              }
+                            }}
                             onClick={(e) => e.stopPropagation()}
                             title="Modifier le statut"
                             aria-label="Modifier le statut"
                           >
-                            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="depose">Depose</option>
+                            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="depose">Déposé</option>
                             <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="en_cours">En cours</option>
-                            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="pret">Pret</option>
-                            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="retire">Retire</option>
+                            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="pret">Prêt</option>
+                            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="retrait_partiel">Retrait Partiel</option>
+                            <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="retire">Récupération Complète</option>
                           </select>
                         )}
                         {order.statut_paiement !== 'Payee' && (
@@ -419,6 +463,27 @@ export function OrdersListPage() {
           </div>
         </div>
       )}
+
+      {/* Détails et Édition de Commande */}
+      <OrderDetailsModal order={detailsModalOrder} onClose={() => setDetailsModalOrder(null)} />
+      <OrderEditModal 
+        order={editModalOrder} 
+        onClose={() => setEditModalOrder(null)} 
+        onSaved={() => {
+          setEditModalOrder(null);
+          fetchOrders();
+          addToast('Commande mise à jour avec succès', 'success');
+        }} 
+      />
+      <PartialWithdrawModal
+        order={partialWithdrawOrder}
+        onClose={() => setPartialWithdrawOrder(null)}
+        onSaved={() => {
+          setPartialWithdrawOrder(null);
+          fetchOrders();
+          addToast('Retrait partiel enregistré avec succès', 'success');
+        }}
+      />
     </div>
   );
 }

@@ -158,8 +158,8 @@ export function DashboardLayout() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg shadow-primary-500/25">
-              <Shirt className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/25 overflow-hidden bg-white">
+              <img src="/logo.jpg" alt="Logo Gloria" className="w-full h-full object-cover" />
             </div>
             <div>
               <span className="text-lg font-bold font-display gradient-text">Gloria</span>

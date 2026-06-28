@@ -19,6 +19,7 @@ const statusConfig: Record<string, any> = {
   en_cours:{ label: 'En cours', icon: Clock,        color: 'text-primary-500', bg: 'bg-primary-500/10',  border: 'border-primary-500/20' },
   pret:    { label: 'Prêt',     icon: CheckCircle,  color: 'text-success-500', bg: 'bg-success-500/10',  border: 'border-success-500/20' },
   retire:  { label: 'Retiré',   icon: CheckCircle,  color: 'text-neutral-500', bg: 'bg-neutral-500/10',  border: 'border-neutral-500/20' },
+  annule:  { label: 'Annulée',  icon: X,            color: 'text-error-600',   bg: 'bg-error-600/10',    border: 'border-error-600/20' },
 };
 
 const operateurLabels: Record<string, { label: string; color: string; bg: string }> = {
@@ -356,6 +357,51 @@ function AvisModal({ order, onClose }: { order: any; onClose: () => void }) {
   );
 }
 
+// ─── Countdown Component ──────────────────────────────────────────────────────
+function Countdown48h({ dateReception }: { dateReception: string }) {
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [percent, setPercent] = useState(100);
+
+  useEffect(() => {
+    const calculate = () => {
+      const now = Date.now();
+      const start = new Date(dateReception).getTime();
+      const limit = 48 * 60 * 60 * 1000;
+      const elapsed = now - start;
+      const remaining = Math.max(limit - elapsed, 0);
+      setTimeLeft(remaining);
+      setPercent(Math.max((remaining / limit) * 100, 0));
+    };
+    calculate();
+    const timer = setInterval(calculate, 60000); // update every minute
+    return () => clearInterval(timer);
+  }, [dateReception]);
+
+  const h = Math.floor(timeLeft / (1000 * 60 * 60));
+  const m = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+
+  const strokeDasharray = 125.6; // 2 * PI * 20
+  const strokeDashoffset = strokeDasharray - (percent / 100) * strokeDasharray;
+
+  if (timeLeft <= 0) return null; // Let the backend handle invalidation
+
+  return (
+    <div className="flex items-center gap-3 bg-white/50 dark:bg-white/5 rounded-xl p-3 border border-white/20 dark:border-white/10 mt-3">
+      <div className="relative w-12 h-12 flex items-center justify-center">
+        <svg className="w-12 h-12 -rotate-90">
+          <circle cx="24" cy="24" r="20" className="stroke-neutral-200 dark:stroke-neutral-700" strokeWidth="4" fill="none" />
+          <circle cx="24" cy="24" r="20" className="stroke-primary-500 transition-all duration-1000" strokeWidth="4" fill="none" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
+        </svg>
+        <span className="absolute text-xs font-bold text-primary-600 dark:text-primary-400">{h}h</span>
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Dépôt requis</p>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">Temps restant : {h}h {m}m</p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export function ClientOrdersPage() {
   const { user } = useAuth();
@@ -439,18 +485,22 @@ export function ClientOrdersPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {order.lignes?.length || 0} article{(order.lignes?.length || 0) > 1 ? 's' : ''}
-                      </span>
-                      <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                        {formatCurrency(Number(order.montant_total))}
-                      </span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                          {order.lignes?.length || 0} article{(order.lignes?.length || 0) > 1 ? 's' : ''}
+                        </span>
+                        <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                          {formatCurrency(Number(order.montant_total))}
+                        </span>
+                      </div>
+                      <ChevronRight className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isSelected ? 'rotate-90' : ''}`} />
                     </div>
-                    <ChevronRight className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isSelected ? 'rotate-90' : ''}`} />
+
+                    {order.etat === 'en_attente' && (
+                      <Countdown48h dateReception={order.date_reception} />
+                    )}
                   </div>
-                </div>
 
                 {/* Expanded details */}
                 <AnimatePresence>
@@ -492,7 +542,7 @@ export function ClientOrdersPage() {
                         </div>
 
                         {/* Pay button */}
-                        {!isPaid && (
+                        {!isPaid && order.etat !== 'en_attente' && order.etat !== 'annule' && (
                           <GlassButton
                             variant="primary"
                             className="w-full"
@@ -501,6 +551,11 @@ export function ClientOrdersPage() {
                           >
                             Payer par Mobile Money
                           </GlassButton>
+                        )}
+                        {!isPaid && order.etat === 'en_attente' && (
+                          <div className="text-center p-3 bg-neutral-100 dark:bg-white/5 rounded-xl border border-neutral-200 dark:border-white/10">
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400">Veuillez d'abord déposer vos vêtements au pressing pour activer le paiement.</p>
+                          </div>
                         )}
 
                         {isPaid && (

@@ -61,8 +61,8 @@ export function LoginPage() {
         </button>
         <div className="glass-card-strong p-8">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-500/25">
-              <Shirt className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-500/25 overflow-hidden bg-white">
+              <img src="/logo.jpg" alt="Logo Gloria" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50 font-display">
               Bienvenue

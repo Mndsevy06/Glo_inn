@@ -212,6 +212,8 @@ export const ordersApi = {
   updateStatus: (id: string, status: string) => request<any>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   updatePayment: (id: string) => request<any>(`/orders/${id}/payment`, { method: 'PATCH' }),
   sendReminder: (id: string) => request<any>(`/orders/${id}/remind`, { method: 'POST' }),
+  updateCart: (id: string, cart: any[]) => request<any>(`/orders/${id}/cart`, { method: 'PUT', body: JSON.stringify({ cart }) }),
+  partialWithdraw: (id: string, lines: any[]) => request<any>(`/orders/${id}/partial-withdraw`, { method: 'POST', body: JSON.stringify({ lines }) }),
 };
 
 // ─── Client ──────────────────────────────────────────────────────────────────

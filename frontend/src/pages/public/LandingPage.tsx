@@ -22,8 +22,8 @@ export function LandingPage() {
         <header className="glass-nav px-6 py-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg shadow-primary-500/25">
-                <Shirt className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/25 overflow-hidden bg-white">
+                <img src="/logo.jpg" alt="Logo Gloria" className="w-full h-full object-cover" />
               </div>
               <span className="text-xl font-bold font-display gradient-text">Pressing Gloria</span>
             </div>
