@@ -17,6 +17,20 @@ export const getMyOrders = async (req: Request, res: Response): Promise<void> =>
       },
       orderBy: { date_reception: 'desc' }
     });
+
+    const now = Date.now();
+    const limit48h = 48 * 60 * 60 * 1000;
+    
+    for (const o of orders) {
+      if (o.etat === 'en_attente' && (now - new Date(o.date_reception).getTime()) > limit48h) {
+        await prisma.commande.update({
+          where: { id: o.id },
+          data: { etat: 'annule' as any }
+        });
+        o.etat = 'annule' as any;
+      }
+    }
+
     res.json(orders);
   } catch (error) {
     console.error('Erreur getMyOrders:', error);

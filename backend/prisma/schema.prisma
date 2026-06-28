@@ -17,7 +17,9 @@ enum EtatCommande {
   depose
   en_cours
   pret
+  retrait_partiel
   retire
+  annule
 }
 
 enum TypeService {
@@ -105,6 +107,7 @@ model LigneCommande {
   id_service   String      @db.Uuid
   service      Service     @relation(fields: [id_service], references: [id])
   quantite     Int
+  quantite_retiree Int     @default(0)
   type_service TypeService @default(Normal)
   note_etat    String?     @db.Text
   sous_total   Decimal     @db.Decimal(10, 2)

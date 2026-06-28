@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createOrder, getOrders, updateOrderStatus, updateOrderPayment, sendReminder } from '../controllers/orders.controller';
+import { createOrder, getOrders, updateOrderStatus, updateOrderPayment, sendReminder, updateOrderCart, partialWithdraw } from '../controllers/orders.controller';
 import { verifyToken, verifyRole } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -20,5 +20,11 @@ router.patch('/:id/payment', verifyRole(['gerant', 'receptionniste']), updateOrd
 
 // POST /api/orders/:id/remind
 router.post('/:id/remind', verifyRole(['gerant', 'receptionniste']), sendReminder);
+
+// PUT /api/orders/:id/cart
+router.put('/:id/cart', verifyRole(['gerant', 'receptionniste']), updateOrderCart);
+
+// POST /api/orders/:id/partial-withdraw
+router.post('/:id/partial-withdraw', verifyRole(['gerant', 'receptionniste']), partialWithdraw);
 
 export default router;
