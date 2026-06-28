@@ -483,6 +483,8 @@ export function MenuManagementPage() {
                           }
                         }}
                         className="glass-input w-full px-4 py-2 text-sm appearance-none bg-transparent dark:bg-neutral-900/50"
+                        title="Sélectionner une catégorie"
+                        aria-label="Sélectionner une catégorie"
                       >
                         <option value="" disabled className="bg-white dark:bg-neutral-900 text-neutral-500">Sélectionner une catégorie</option>
                         {CATEGORIES.map(cat => (
@@ -493,12 +495,16 @@ export function MenuManagementPage() {
                       {!CATEGORIES.includes(form.categorie) && form.categorie !== '' && (
                         <input type="text" placeholder="Entrez la catégorie..." value={form.categorie}
                           onChange={e => setForm({ ...form, categorie: e.target.value })}
-                          className="glass-input w-full px-4 py-2 mt-2 text-sm" />
+                          className="glass-input w-full px-4 py-2 mt-2 text-sm" 
+                          title="Nouvelle catégorie"
+                          aria-label="Nouvelle catégorie" />
                       )}
                       {!CATEGORIES.includes(form.categorie) && form.categorie === '' && (
                         <input type="text" placeholder="Saisir la nouvelle catégorie..."
                           onChange={e => setForm({ ...form, categorie: e.target.value })}
-                          className="glass-input w-full px-4 py-2 mt-2 text-sm" autoFocus />
+                          className="glass-input w-full px-4 py-2 mt-2 text-sm" autoFocus 
+                          title="Saisir la nouvelle catégorie"
+                          aria-label="Saisir la nouvelle catégorie" />
                       )}
                     </div>
                   </div>
@@ -530,6 +536,8 @@ export function MenuManagementPage() {
                             type="button"
                             onClick={() => { setImageFile(null); setForm({ ...form, image_url: '' }); if (editingService) editingService.image = null; }}
                             className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-colors"
+                            title="Supprimer l'image"
+                            aria-label="Supprimer l'image"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -546,14 +554,23 @@ export function MenuManagementPage() {
                             setImageFile(null); // Clear file if url is used
                           }}
                           className="glass-input w-full px-4 py-2 text-sm"
+                          title="URL de l'image"
+                          aria-label="URL de l'image"
                         />
                         <div className="relative glass-input flex items-center p-2 rounded-xl">
-                          <input type="file" accept="image/*" onChange={e => {
-                            if (e.target.files && e.target.files[0]) {
-                              setImageFile(e.target.files[0]);
-                              setForm({ ...form, image_url: '' }); // Clear url if file is uploaded
-                            }
-                          }} className="w-full text-xs text-neutral-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-900 dark:file:text-primary-300 cursor-pointer" />
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={e => {
+                              if (e.target.files && e.target.files[0]) {
+                                setImageFile(e.target.files[0]);
+                                setForm({ ...form, image_url: '' }); // Clear url if file is uploaded
+                              }
+                            }} 
+                            className="w-full text-xs text-neutral-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-900 dark:file:text-primary-300 cursor-pointer" 
+                            title="Télécharger une image"
+                            aria-label="Télécharger une image"
+                          />
                         </div>
                       </div>
                     </div>

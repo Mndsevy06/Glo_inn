@@ -57,7 +57,9 @@ export function ClientHomePage() {
     if (!socket) return;
     const handler = () => setNotifications(prev => [...prev, { lue: false }]);
     socket.on('new_notification', handler);
-    return () => socket.off('new_notification', handler);
+    return () => {
+      socket.off('new_notification', handler);
+    };
   }, [socket]);
 
   if (loading) {

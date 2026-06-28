@@ -173,6 +173,8 @@ export function MenuPage() {
                         type="button" 
                         onClick={() => setOnlyExpress(!onlyExpress)}
                         className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${onlyExpress ? 'bg-warning-500' : 'bg-neutral-300 dark:bg-neutral-700'}`}
+                        title="Basculer Service Express"
+                        aria-label="Basculer Service Express"
                       >
                         <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${onlyExpress ? 'translate-x-5' : ''}`} />
                       </button>

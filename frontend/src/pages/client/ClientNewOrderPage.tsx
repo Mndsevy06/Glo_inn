@@ -49,7 +49,12 @@ export function ClientNewOrderPage() {
 
   useEffect(() => {
     servicesApi.getAll().then((res) => {
-      setServices(res.filter((s: Service) => s.actif));
+      const formattedServices: Service[] = res.map(s => ({
+        ...s,
+        tarif_unitaire: Number(s.tarif_unitaire),
+        tarif_express: s.tarif_express ? Number(s.tarif_express) : null
+      }));
+      setServices(formattedServices.filter(s => s.actif));
     }).catch(err => console.error("Erreur chargement services", err));
   }, []);
 
@@ -163,17 +168,17 @@ export function ClientNewOrderPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{item.service.libelle}</p>
                       </div>
-                      <button onClick={() => removeItem(item.id)} className="p-1 rounded hover:bg-error-500/10">
+                      <button onClick={() => removeItem(item.id)} className="p-1 rounded hover:bg-error-500/10" title="Supprimer l'article" aria-label="Supprimer l'article">
                         <X className="w-4 h-4 text-error-500" />
                       </button>
                     </div>
                     <div className="flex items-center gap-2 justify-between">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => updateQty(item.id, -1)} className="w-7 h-7 rounded-lg bg-white/50 dark:bg-white/10 flex items-center justify-center hover:bg-white/70">
+                        <button onClick={() => updateQty(item.id, -1)} className="w-7 h-7 rounded-lg bg-white/50 dark:bg-white/10 flex items-center justify-center hover:bg-white/70" title="Diminuer la quantité" aria-label="Diminuer la quantité">
                           <Minus className="w-3 h-3" />
                         </button>
                         <span className="text-sm font-medium w-6 text-center">{item.quantite}</span>
-                        <button onClick={() => updateQty(item.id, 1)} className="w-7 h-7 rounded-lg bg-white/50 dark:bg-white/10 flex items-center justify-center hover:bg-white/70">
+                        <button onClick={() => updateQty(item.id, 1)} className="w-7 h-7 rounded-lg bg-white/50 dark:bg-white/10 flex items-center justify-center hover:bg-white/70" title="Augmenter la quantité" aria-label="Augmenter la quantité">
                           <Plus className="w-3 h-3" />
                         </button>
                       </div>

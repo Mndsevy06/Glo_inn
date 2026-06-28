@@ -64,7 +64,8 @@ export function NewOrderPage() {
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [createdOrderData, setCreatedOrderData] = useState<Record<string, unknown> | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [createdOrderData, setCreatedOrderData] = useState<any | null>(null);
 
   useEffect(() => {
     // Load clients
@@ -74,7 +75,12 @@ export function NewOrderPage() {
 
     // Load services
     servicesApi.getAll().then((res) => {
-      setServices(res);
+      const formattedServices: Service[] = res.map(s => ({
+        ...s,
+        tarif_unitaire: Number(s.tarif_unitaire),
+        tarif_express: s.tarif_express ? Number(s.tarif_express) : null
+      }));
+      setServices(formattedServices);
     }).catch(err => console.error("Erreur chargement services", err));
   }, []);
 
@@ -195,7 +201,7 @@ export function NewOrderPage() {
                       {selectedClient.id === 'new' ? 'Nouveau Client' : selectedClient.telephone}
                     </p>
                   </div>
-                  <button onClick={() => setSelectedClient(null)} className="p-1 rounded-lg hover:bg-white/50">
+                  <button onClick={() => setSelectedClient(null)} className="p-1 rounded-lg hover:bg-white/50" title="Retirer le client" aria-label="Retirer le client">
                     <X className="w-4 h-4 text-neutral-500" />
                   </button>
                 </div>
@@ -360,16 +366,16 @@ export function NewOrderPage() {
                         <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{item.service.libelle}</p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400">{item.service.categorie}</p>
                       </div>
-                      <button onClick={() => removeItem(item.id)} className="p-1 rounded hover:bg-error-500/10">
+                      <button onClick={() => removeItem(item.id)} className="p-1 rounded hover:bg-error-500/10" title="Supprimer l'article" aria-label="Supprimer l'article">
                         <X className="w-4 h-4 text-error-500" />
                       </button>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => updateQty(item.id, -1)} className="w-7 h-7 rounded-lg bg-white/50 dark:bg-white/10 flex items-center justify-center hover:bg-white/70">
+                      <button onClick={() => updateQty(item.id, -1)} className="w-7 h-7 rounded-lg bg-white/50 dark:bg-white/10 flex items-center justify-center hover:bg-white/70" title="Diminuer la quantité" aria-label="Diminuer la quantité">
                         <Minus className="w-3 h-3" />
                       </button>
                       <span className="text-sm font-medium w-6 text-center">{item.quantite}</span>
-                      <button onClick={() => updateQty(item.id, 1)} className="w-7 h-7 rounded-lg bg-white/50 dark:bg-white/10 flex items-center justify-center hover:bg-white/70">
+                      <button onClick={() => updateQty(item.id, 1)} className="w-7 h-7 rounded-lg bg-white/50 dark:bg-white/10 flex items-center justify-center hover:bg-white/70" title="Augmenter la quantité" aria-label="Augmenter la quantité">
                         <Plus className="w-3 h-3" />
                       </button>
                     </div>

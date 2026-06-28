@@ -88,7 +88,9 @@ function PaymentModal({
       onSuccess();
     };
     socket.on('payment_confirmed', handler);
-    return () => socket.off('payment_confirmed', handler);
+    return () => {
+      socket.off('payment_confirmed', handler);
+    };
   }, [socket, step]);
 
   const handleSubmit = async (e: React.FormEvent) => {

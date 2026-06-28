@@ -478,6 +478,8 @@ export function UsersPage() {
                       value={roleFilter}
                       onChange={(e) => { setRoleFilter(e.target.value); setCurrentPage(1); }}
                       className="glass-input w-full py-2 px-3 text-sm bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-200 dark:border-white/10"
+                      title="Filtrer par rôle"
+                      aria-label="Filtrer par rôle"
                     >
                       <option value="all" className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">Tous les rôles</option>
                       <option value="client" className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">Client</option>
@@ -492,6 +494,8 @@ export function UsersPage() {
                       value={statusFilter}
                       onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
                       className="glass-input w-full py-2 px-3 text-sm bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-200 dark:border-white/10"
+                      title="Filtrer par statut"
+                      aria-label="Filtrer par statut"
                     >
                       <option value="all" className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">Tous les statuts</option>
                       <option value="active" className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">Actifs</option>
@@ -522,6 +526,8 @@ export function UsersPage() {
                   ? "bg-white dark:bg-neutral-800 shadow-sm text-primary-500"
                   : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
               )}
+              title="Vue en liste"
+              aria-label="Vue en liste"
             >
               <List className="w-4 h-4" />
             </button>
@@ -533,6 +539,8 @@ export function UsersPage() {
                   ? "bg-white dark:bg-neutral-800 shadow-sm text-primary-500"
                   : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
               )}
+              title="Vue en grille"
+              aria-label="Vue en grille"
             >
               <Grid className="w-4 h-4" />
             </button>
@@ -542,6 +550,8 @@ export function UsersPage() {
           <button
             onClick={fetchData}
             className="p-2.5 rounded-xl border border-white/20 dark:border-white/10 bg-white/30 dark:bg-white/5 hover:bg-white/50 text-neutral-500 transition-colors"
+            title="Rafraîchir"
+            aria-label="Rafraîchir"
           >
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
           </button>
@@ -619,6 +629,8 @@ export function UsersPage() {
                     <button
                       onClick={(e) => handleToggleActions(user.id, e)}
                       className="actions-btn p-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 text-neutral-500 dark:text-neutral-400 transition-colors"
+                      title="Options"
+                      aria-label="Options"
                     >
                       <MoreVertical className="w-4 h-4" />
                     </button>
@@ -661,6 +673,8 @@ export function UsersPage() {
                     <button
                       onClick={(e) => handleToggleActions(user.id, e)}
                       className="actions-btn p-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 text-neutral-500 dark:text-neutral-400 transition-colors"
+                      title="Options"
+                      aria-label="Options"
                     >
                       <MoreVertical className="w-4 h-4" />
                     </button>
@@ -713,6 +727,8 @@ export function UsersPage() {
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
               className="p-2 rounded-lg border border-white/20 dark:border-white/10 bg-white/50 hover:bg-white/80 dark:bg-white/5 dark:hover:bg-white/10 disabled:opacity-40 transition-colors"
+              title="Page précédente"
+              aria-label="Page précédente"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -723,6 +739,8 @@ export function UsersPage() {
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
               className="p-2 rounded-lg border border-white/20 dark:border-white/10 bg-white/50 hover:bg-white/80 dark:bg-white/5 dark:hover:bg-white/10 disabled:opacity-40 transition-colors"
+              title="Page suivante"
+              aria-label="Page suivante"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -792,6 +810,8 @@ export function UsersPage() {
               value={editForm.role}
               onChange={(e) => setEditForm({ ...editForm, role: e.target.value as UserRole })}
               className="glass-input w-full py-2.5 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-200 dark:border-white/10"
+              title="Sélectionner le rôle"
+              aria-label="Sélectionner le rôle"
             >
               <option value="client" className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">Client</option>
               <option value="receptionniste" className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">Réceptionniste</option>

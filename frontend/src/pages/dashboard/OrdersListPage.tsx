@@ -207,6 +207,8 @@ export function OrdersListPage() {
             value={statusFilter ?? ''}
             onChange={(e) => setStatusFilter(e.target.value || null)}
             className="glass-input py-2 text-sm pr-8"
+            title="Filtrer par statut"
+            aria-label="Filtrer par statut"
           >
             <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="">Tous les statuts</option>
             <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="en_attente">En file d'attente</option>
@@ -335,6 +337,8 @@ export function OrdersListPage() {
                             value={order.etat}
                             onChange={(e) => handleStatusChange(order.id, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
+                            title="Modifier le statut"
+                            aria-label="Modifier le statut"
                           >
                             <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="depose">Depose</option>
                             <option className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100" value="en_cours">En cours</option>
@@ -388,6 +392,8 @@ export function OrdersListPage() {
                   type="button"
                   onClick={() => setRemindersModalData(null)}
                   className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/10 text-neutral-500 dark:text-neutral-400"
+                  title="Fermer"
+                  aria-label="Fermer"
                 >
                   <X className="w-5 h-5" />
                 </button>

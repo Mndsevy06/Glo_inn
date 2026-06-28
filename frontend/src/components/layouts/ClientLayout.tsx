@@ -261,6 +261,8 @@ export function ClientLayout() {
                 <button
                   onClick={() => setNotifModalOpen(false)}
                   className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                  title="Fermer"
+                  aria-label="Fermer"
                 >
                   <X className="w-5 h-5 text-neutral-500" />
                 </button>
