@@ -7,19 +7,20 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!username || !password) {
+    if (!email || !password) {
       res.status(400).json({ message: 'Veuillez remplir tous les champs.' });
       return;
     }
 
-    // Le champ "username" du frontend correspond à "username" (email) ou "nom"
+    // Le champ "email" du frontend correspond au "username", "nom" ou "telephone" (où l'email est souvent stocké)
     const user = await prisma.utilisateur.findFirst({
       where: {
         OR: [
-          { username: username },
-          { nom: username }
+          { username: email },
+          { nom: email },
+          { telephone: email }
         ]
       }
     });

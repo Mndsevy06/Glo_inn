@@ -3,7 +3,7 @@ import type { User, Role } from '@/types';
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => Promise<{ success: boolean; role?: Role }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; role?: Role }>;
   register: (data: any) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   role: Role | null;
@@ -57,12 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(console.error);
   }, []);
 
-  const login = useCallback(async (username: string, password: string): Promise<{ success: boolean; role?: Role }> => {
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; role?: Role }> => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       if (response.ok) {

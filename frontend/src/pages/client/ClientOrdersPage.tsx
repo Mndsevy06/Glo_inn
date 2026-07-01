@@ -3,11 +3,11 @@ import { Badge } from '@/components/ui/Badge';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { useAuth } from '@/context/AuthContext';
 import { clientApi, paymentsApi, avisApi } from '@/lib/api';
-import { formatDate, formatCurrency } from '@/lib/utils';
+import { formatDate, formatCurrency, viewInvoice } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, Clock, CheckCircle, CreditCard, ChevronRight,
-  Smartphone, X, Loader2, CheckCircle2, AlertCircle, Wifi, Star, MessageSquare
+  Smartphone, X, Loader2, CheckCircle2, AlertCircle, Wifi, Star, MessageSquare, FileText
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useSocket } from '@/context/SocketContext';
@@ -485,7 +485,7 @@ export function ClientOrdersPage() {
                     </div>
                   </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/20 dark:border-white/10">
                       <div className="flex items-center gap-4">
                         <span className="text-xs text-neutral-500 dark:text-neutral-400">
                           {order.lignes?.length || 0} article{(order.lignes?.length || 0) > 1 ? 's' : ''}
@@ -494,7 +494,16 @@ export function ClientOrdersPage() {
                           {formatCurrency(Number(order.montant_total))}
                         </span>
                       </div>
-                      <ChevronRight className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isSelected ? 'rotate-90' : ''}`} />
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); viewInvoice({ ...order, client: user }, false); }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-50 dark:bg-primary-500/10 hover:bg-primary-100 dark:hover:bg-primary-500/20 text-primary-600 dark:text-primary-400 transition-colors text-xs font-medium"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          Facture
+                        </button>
+                        <ChevronRight className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isSelected ? 'rotate-90' : ''}`} />
+                      </div>
                     </div>
 
                     {order.etat === 'en_attente' && (

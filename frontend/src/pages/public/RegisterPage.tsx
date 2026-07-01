@@ -102,13 +102,15 @@ export function RegisterPage() {
               value={formData.nom}
               onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
               icon={<User className="w-4 h-4" />}
+              inputClassName="!border-neutral-300 dark:!border-neutral-600 !transition-none focus:!ring-0 focus:!border-neutral-300 dark:focus:!border-neutral-600"
             />
             <GlassInput
-              label="Téléphone ou Email *"
-              placeholder="ex: 082444555 ou client@example.com"
+              label="Email *"
+              placeholder="ex: client@example.com"
               value={formData.telephone}
               onChange={(e) => handleCreatePhoneChange(e.target.value)}
-              icon={<Phone className="w-4 h-4" />}
+              icon={<AtSign className="w-4 h-4" />}
+              inputClassName="!border-neutral-300 dark:!border-neutral-600 !transition-none focus:!ring-0 focus:!border-neutral-300 dark:focus:!border-neutral-600"
             />
             <GlassInput
               label="Mot de passe *"
@@ -122,6 +124,7 @@ export function RegisterPage() {
                 </button>
               }
               icon={<Key className="w-4 h-4" />}
+              inputClassName="!border-neutral-300 dark:!border-neutral-600 !transition-none focus:!ring-0 focus:!border-neutral-300 dark:focus:!border-neutral-600"
             />
             <GlassButton
               variant="primary"

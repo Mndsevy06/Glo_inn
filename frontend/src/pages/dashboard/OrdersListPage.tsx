@@ -2,7 +2,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { ordersApi, servicesApi } from '@/lib/api';
-import { formatDate, formatCurrency, formatDateTime } from '@/lib/utils';
+import { formatDate, formatCurrency, formatDateTime, viewInvoice } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Package, Clock, CheckCircle, QrCode, CreditCard, Search, Filter, CheckCircle2, Loader2, Bell, X, History, Lock, Printer, Eye, Edit3, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -73,54 +73,7 @@ export function OrdersListPage() {
   };
 
   const printInvoice = (order: any) => {
-    const windowPrint = window.open('', '', 'width=300,height=600');
-    if (windowPrint) {
-      windowPrint.document.write(`
-<html><head><title>Facture</title>
-<style>body { font-family: monospace; margin: 0; padding: 10px; width: 80mm; } .text-center { text-align: center; } .text-left { text-align: left; } .flex { display: flex; } .justify-between { justify-content: space-between; } .font-bold { font-weight: bold; } .text-xl { font-size: 1.25rem; } .text-xs { font-size: 0.75rem; } .text-base { font-size: 1rem; } .text-sm { font-size: 0.875rem; } .mb-4 { margin-bottom: 1rem; } .mb-2 { margin-bottom: 0.5rem; } .mb-1 { margin-bottom: 0.25rem; } .mt-1 { margin-top: 0.25rem; } .mt-2 { margin-top: 0.5rem; } .mt-6 { margin-top: 1.5rem; } .pb-4 { padding-bottom: 1rem; } .pb-2 { padding-bottom: 0.5rem; } .pt-4 { padding-top: 1rem; } .pr-2 { padding-right: 0.5rem; } .border-b { border-bottom: 1px dashed black; } .border-t { border-top: 1px dashed black; } .uppercase { text-transform: uppercase; } .w-full { width: 100%; } .flex-1 { flex: 1; } </style>
-</head><body>
-  <div class="text-center mb-4 border-b pb-4">
-    <h2 class="text-xl font-bold uppercase">Pressing Gloria</h2>
-    <p class="text-xs mt-1">Numéro: ${order.facture?.numero || order.id.split('-')[0].toUpperCase()}</p>
-    <p class="text-xs">${new Date().toLocaleDateString('fr-FR')} ${new Date().toLocaleTimeString('fr-FR')}</p>
-  </div>
-  <div class="mb-4 text-xs">
-    <p><span class="font-bold">Client:</span> ${order.client?.nom}</p>
-    <p><span class="font-bold">Tel:</span> ${order.client?.telephone}</p>
-  </div>
-  <div class="border-b pb-2 mb-2 text-xs">
-    <div class="flex justify-between font-bold mb-1">
-      <span>Article</span>
-      <span>Total</span>
-    </div>
-    ${order.lignes.map((item: any) => {
-      const price = item.type_service === 'Express' && item.service.tarif_express ? Number(item.service.tarif_express) : Number(item.service.tarif_unitaire);
-      return `
-      <div class="flex justify-between mb-1">
-        <span class="flex-1 pr-2 text-left">
-          ${item.quantite}x ${item.service.libelle} ${item.type_service === 'Express' ? '(Exp)' : ''}
-        </span>
-        <span>${formatCurrency(price * item.quantite)}</span>
-      </div>`;
-    }).join('')}
-  </div>
-  <div class="flex justify-between font-bold text-base mt-2">
-    <span>TOTAL</span>
-    <span>${formatCurrency(Number(order.montant_total))}</span>
-  </div>
-  <div class="text-center mt-6 text-xs border-t pt-4">
-    <p>Merci de votre visite !</p>
-    <p>A bientôt chez Pressing Gloria</p>
-  </div>
-</body></html>
-      `);
-      windowPrint.document.close();
-      windowPrint.focus();
-      setTimeout(() => {
-        windowPrint.print();
-        windowPrint.close();
-      }, 500);
-    }
+    viewInvoice(order, true);
   };
 
   const handlePayment = async (order: any, e: React.MouseEvent) => {

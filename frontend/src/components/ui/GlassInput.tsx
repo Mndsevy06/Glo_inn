@@ -7,10 +7,11 @@ interface GlassInputProps extends InputHTMLAttributes<HTMLInputElement> {
   icon?: ReactNode;
   iconRight?: ReactNode;
   className?: string;
+  inputClassName?: string;
 }
 
 export const GlassInput = forwardRef<HTMLInputElement, GlassInputProps>(
-  ({ label, error, icon, iconRight, className, ...props }, ref) => {
+  ({ label, error, icon, iconRight, className, inputClassName, ...props }, ref) => {
     return (
       <div className={cn('w-full', className)}>
         {label && (
@@ -31,6 +32,7 @@ export const GlassInput = forwardRef<HTMLInputElement, GlassInputProps>(
               icon && 'pl-11',
               iconRight && 'pr-11',
               error && 'border-error-400/50 focus:ring-error-500/50 focus:border-error-400/50',
+              inputClassName
             )}
             {...props}
           />

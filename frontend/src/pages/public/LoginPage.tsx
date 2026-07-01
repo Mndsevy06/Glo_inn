@@ -11,19 +11,19 @@ export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { addToast } = useToast();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!username || !password) {
+    if (!email || !password) {
       addToast('Veuillez remplir tous les champs', 'warning');
       return;
     }
     setLoading(true);
 
-    const result = await login(username, password);
+    const result = await login(email, password);
 
     if (result.success && result.role) {
       addToast('Connexion réussie !', 'success');
@@ -74,16 +74,17 @@ export function LoginPage() {
 
           <div className="space-y-4">
             <GlassInput
-              label="Nom"
-              placeholder="Votre nom"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              label="Email"
+              placeholder="Votre email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               icon={<LogIn className="w-4 h-4" />}
+              inputClassName="!border-neutral-300 dark:!border-neutral-600 !transition-none focus:!ring-0 focus:!border-neutral-300 dark:focus:!border-neutral-600"
             />
             <GlassInput
-              label="Mot de passe, Numéro de téléphone ou Email"
+              label="Mot de passe"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Votre mot de passe, téléphone ou email"
+              placeholder="Votre mot de passe"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               iconRight={
@@ -91,6 +92,7 @@ export function LoginPage() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               }
+              inputClassName="!border-neutral-300 dark:!border-neutral-600 !transition-none focus:!ring-0 focus:!border-neutral-300 dark:focus:!border-neutral-600"
             />
             <GlassButton
               variant="primary"
