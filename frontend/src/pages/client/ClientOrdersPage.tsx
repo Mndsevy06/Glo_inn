@@ -495,13 +495,15 @@ export function ClientOrdersPage() {
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); viewInvoice({ ...order, client: user }, false); }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-50 dark:bg-primary-500/10 hover:bg-primary-100 dark:hover:bg-primary-500/20 text-primary-600 dark:text-primary-400 transition-colors text-xs font-medium"
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          Facture
-                        </button>
+                        {isPaid && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); viewInvoice({ ...order, client: user }, false); }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-50 dark:bg-primary-500/10 hover:bg-primary-100 dark:hover:bg-primary-500/20 text-primary-600 dark:text-primary-400 transition-colors text-xs font-medium"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            Facture
+                          </button>
+                        )}
                         <ChevronRight className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isSelected ? 'rotate-90' : ''}`} />
                       </div>
                     </div>
