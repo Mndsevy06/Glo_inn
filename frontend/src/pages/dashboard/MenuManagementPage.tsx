@@ -97,13 +97,16 @@ export function MenuManagementPage() {
 
   const openEdit = (s: ApiService) => {
     setEditingService(s);
+    // Les prix en base sont en CDF, on les convertit en USD pour le formulaire
+    const rateStr = localStorage.getItem('pressing-gloria-rate');
+    const rate = rateStr ? Number(rateStr) : 2800;
     setForm({
       libelle: s.libelle,
       description: s.description || '',
-      tarif_unitaire: String(s.tarif_unitaire),
+      tarif_unitaire: (Number(s.tarif_unitaire) / rate).toFixed(2),
       categorie: s.categorie,
       express_disponible: s.express_disponible,
-      tarif_express: s.tarif_express ? String(s.tarif_express) : '',
+      tarif_express: s.tarif_express ? (Number(s.tarif_express) / rate).toFixed(2) : '',
       actif: s.actif,
       image_url: s.image && s.image.startsWith('http') ? s.image : '',
     });
@@ -119,14 +122,20 @@ export function MenuManagementPage() {
     }
     try {
       setSubmitting(true);
+      // Les tarifs sont saisis en USD dans le formulaire mais la base stocke en CDF
+      const rateStr = localStorage.getItem('pressing-gloria-rate');
+      const rate = rateStr ? Number(rateStr) : 2800;
+      const tarifUnitaireCDF = Math.round(Number(form.tarif_unitaire) * rate);
+      const tarifExpressCDF = form.tarif_express ? Math.round(Number(form.tarif_express) * rate) : null;
+
       const formData = new FormData();
       formData.append('libelle', form.libelle);
       formData.append('description', form.description);
-      formData.append('tarif_unitaire', String(Number(form.tarif_unitaire)));
+      formData.append('tarif_unitaire', String(tarifUnitaireCDF));
       formData.append('categorie', form.categorie);
       formData.append('express_disponible', String(form.express_disponible));
-      if (form.express_disponible && form.tarif_express) {
-        formData.append('tarif_express', String(Number(form.tarif_express)));
+      if (form.express_disponible && tarifExpressCDF) {
+        formData.append('tarif_express', String(tarifExpressCDF));
       }
       formData.append('actif', String(form.actif));
       

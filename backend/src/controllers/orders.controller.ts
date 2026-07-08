@@ -20,17 +20,34 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
     if (newClient && !clientId) {
       let username = newClient.username;
       
+      if (username) {
+        const existing = await prisma.utilisateur.findUnique({ where: { username } });
+        if (existing) {
+          res.status(409).json({ message: "Il faut taper un autre mail puisqu'un utilisateur avec cet email existe." });
+          return;
+        }
+      } 
+      
+      if (newClient.telephone) {
+        const existingPhone = await prisma.utilisateur.findFirst({ where: { telephone: newClient.telephone } });
+        if (existingPhone) {
+          res.status(409).json({ message: "Il faut taper un autre mail puisqu'un utilisateur avec cet email existe." });
+          return;
+        }
+      }
+
       if (!username) {
         const baseUsername = newClient.nom.toLowerCase().replace(/[^a-z0-9]/g, '_');
-        username = baseUsername;
+        let counter = 1;
+        let finalUsername = baseUsername;
+        while (await prisma.utilisateur.findUnique({ where: { username: finalUsername } })) {
+          finalUsername = `${baseUsername}_${counter}`;
+          counter++;
+        }
+        username = finalUsername;
       }
-      
-      let counter = 1;
+
       let finalUsername = username;
-      while (await prisma.utilisateur.findUnique({ where: { username: finalUsername } })) {
-        finalUsername = `${username}_${counter}`;
-        counter++;
-      }
 
       const passwordToUse = newClient.password || '123456';
       const hashedPassword = await bcrypt.hash(passwordToUse, 10);

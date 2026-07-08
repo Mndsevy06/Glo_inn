@@ -597,7 +597,7 @@ export function ClientOrdersPage() {
                           </div>
                         )}
 
-                        {isPaid && (
+                        {isPaid && order.etat === 'retire' && (
                           <div className="space-y-3">
                             <div className="flex items-center justify-center gap-2 py-2 text-success-600 dark:text-success-400">
                               <CheckCircle2 className="w-5 h-5" />

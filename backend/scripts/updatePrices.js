@@ -1,5 +1,10 @@
+require('dotenv').config();
+const { Pool } = require('pg');
+const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log("Fetching services...");
@@ -11,16 +16,15 @@ async function main() {
     
     let updated = false;
 
-    // Reduce price if it's 80000 or more
-    while (price >= 80000) {
-      price = price / 10;
+    if (price > 7000) {
+      price = 7000;
       updated = true;
     }
 
-    // Reduce express price if it exists and is 80000 or more
+    // Reduce express price if it exists and is 7000 or more
     if (expressPrice) {
-      while (expressPrice >= 80000) {
-        expressPrice = expressPrice / 10;
+      if (expressPrice > 7000) {
+        expressPrice = 7000;
         updated = true;
       }
     }

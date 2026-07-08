@@ -11,8 +11,9 @@ export function formatCurrency(amount: number): string {
   const rate = rateStr ? Number(rateStr) : (Number(import.meta.env.VITE_EXCHANGE_RATE) || 2800);
 
   let finalAmount = amount;
-  if (currency === 'CDF') {
-    finalAmount = amount * rate;
+  // La base de données stocke les prix en Francs Congolais (CDF)
+  if (currency === 'USD') {
+    finalAmount = amount / rate;
   }
 
   return new Intl.NumberFormat('fr-FR', {

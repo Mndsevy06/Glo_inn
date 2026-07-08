@@ -94,11 +94,11 @@ export function DashboardLayout() {
   const handleCreatePhoneChange = (val: string) => {
     setNewClient(prev => {
       const digitsOnly = val.replace(/[^0-9]/g, '');
-      const defaultPass = digitsOnly.length >= 6 ? digitsOnly.slice(-6) : '123456';
+      const defaultPass = digitsOnly.length >= 6 ? digitsOnly.slice(-6) : '';
       return {
         ...prev,
         telephone: val,
-        password: prev.password === '' || prev.password === '123456' || prev.password === prev.telephone.replace(/[^0-9]/g, '').slice(-6)
+        password: prev.password === '' || prev.password === prev.telephone.replace(/[^0-9]/g, '').slice(-6)
           ? defaultPass
           : prev.password
       };
@@ -125,7 +125,7 @@ export function DashboardLayout() {
       });
       addToast('Client créé avec succès.', 'success');
       setShowCreateClient(false);
-      setNewClient({ nom: '', telephone: '', password: '123456' });
+      setNewClient({ nom: '', telephone: '', password: '' });
     } catch (error: any) {
       addToast(error.message || 'Erreur lors de la création.', 'error');
     }
@@ -213,8 +213,8 @@ export function DashboardLayout() {
                     setSidebarOpen(false);
                   }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
-                      ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400'
-                      : 'text-neutral-600 dark:text-neutral-400 hover:bg-white/50 dark:hover:bg-white/10'
+                    ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-white/50 dark:hover:bg-white/10'
                     }`}
                 >
                   <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5px]' : 'stroke-[1.5px]'}`} />
@@ -401,8 +401,8 @@ export function DashboardLayout() {
             onChange={(e) => setNewClient({ ...newClient, nom: e.target.value })}
           />
           <GlassInput
-            label="Téléphone ou Email *"
-            placeholder="Ex: 082444555 ou client@example.com"
+            label="Email *"
+            placeholder="Ex: client@example.com"
             value={newClient.telephone}
             onChange={(e) => handleCreatePhoneChange(e.target.value)}
           />
@@ -436,7 +436,7 @@ export function DashboardLayout() {
               className="glass-input w-full pl-10 py-2 text-sm"
             />
           </div>
-          
+
           <div className="max-h-[60vh] overflow-y-auto glass-scrollbar space-y-2">
             {loadingClients ? (
               <div className="flex justify-center py-8 text-primary-500"><span className="animate-pulse">Chargement...</span></div>
@@ -457,7 +457,7 @@ export function DashboardLayout() {
                   </div>
                 ))
             )}
-            
+
             {!loadingClients && clientList.length === 0 && (
               <p className="text-center text-sm text-neutral-500 py-8">Aucun client trouvé.</p>
             )}

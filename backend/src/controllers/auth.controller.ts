@@ -69,10 +69,17 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Vérifier unicité du username
+    // Vérifier unicité du username (utilisé comme email)
     const existing = await prisma.utilisateur.findUnique({ where: { username } });
     if (existing) {
-      res.status(409).json({ message: `Le nom d'utilisateur "${username}" est déjà pris.` });
+      res.status(409).json({ message: "Il faut taper un autre mail puisqu'un utilisateur avec cet email existe." });
+      return;
+    }
+
+    // Le champ telephone sert souvent d'email
+    const existingPhone = await prisma.utilisateur.findFirst({ where: { telephone } });
+    if (existingPhone) {
+      res.status(409).json({ message: "Il faut taper un autre mail puisqu'un utilisateur avec cet email existe." });
       return;
     }
 
