@@ -14,7 +14,7 @@ import { CurrencyMenu } from '@/components/ui/CurrencyMenu';
 import { GlassInput } from '@/components/ui/GlassInput';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { Modal } from '@/components/ui/Modal';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Users as UsersIcon, Search as SearchIcon } from 'lucide-react';
 import { useSocket } from '@/context/SocketContext';
 
 const allSidebarItems = [
@@ -40,7 +40,11 @@ export function DashboardLayout() {
   const [unreadAvis, setUnreadAvis] = useState(0);
 
   const [showCreateClient, setShowCreateClient] = useState(false);
-  const [newClient, setNewClient] = useState({ nom: '', telephone: '', password: '123456' });
+  const [showClientList, setShowClientList] = useState(false);
+  const [clientList, setClientList] = useState<any[]>([]);
+  const [clientSearch, setClientSearch] = useState('');
+  const [loadingClients, setLoadingClients] = useState(false);
+  const [newClient, setNewClient] = useState({ nom: '', telephone: '', password: '' });
 
   const [rateModalOpen, setRateModalOpen] = useState(false);
   const [rateInput, setRateInput] = useState(localStorage.getItem('pressing-gloria-rate') || '2800');
@@ -60,15 +64,31 @@ export function DashboardLayout() {
   // Charge le compteur d'avis non lus (gérant seulement)
   useEffect(() => {
     if (user?.role !== 'gerant') return;
-    avisApi.getUnreadCount().then((r) => setUnreadAvis(r.count)).catch(() => {});
+    avisApi.getUnreadCount().then((r) => setUnreadAvis(r.count)).catch(() => { });
   }, [user]);
+
+  const handleOpenClientList = async () => {
+    setShowClientList(true);
+    setLoadingClients(true);
+    try {
+      const res = await usersApi.getAll({ role: 'client', limit: 1000 });
+      setClientList(res.users);
+    } catch (error) {
+      console.error(error);
+      addToast('Erreur lors du chargement des clients', 'error');
+    } finally {
+      setLoadingClients(false);
+    }
+  };
 
   // Écoute les nouveaux avis en temps réel
   useEffect(() => {
     if (!socket || user?.role !== 'gerant') return;
     const handler = () => setUnreadAvis((n) => n + 1);
     socket.on('new_avis', handler);
-    return () => socket.off('new_avis', handler);
+    return () => {
+      socket.off('new_avis', handler);
+    };
   }, [socket, user]);
 
   const handleCreatePhoneChange = (val: string) => {
@@ -192,11 +212,10 @@ export function DashboardLayout() {
                     navigate(item.path);
                     setSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    isActive
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
                       ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400'
                       : 'text-neutral-600 dark:text-neutral-400 hover:bg-white/50 dark:hover:bg-white/10'
-                  }`}
+                    }`}
                 >
                   <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5px]' : 'stroke-[1.5px]'}`} />
                   <span className="flex-1 text-left">{item.label}</span>
@@ -266,15 +285,26 @@ export function DashboardLayout() {
           </div>
           <div className="flex items-center gap-2">
             {user?.role === 'receptionniste' && (
-              <button 
-                onClick={() => setShowCreateClient(true)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400 hover:bg-primary-500/20 transition-colors text-sm font-medium"
-                aria-label="Créer Client"
-                title="Créer Client"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span className="hidden sm:inline">Nouveau Client</span>
-              </button>
+              <>
+                <button
+                  onClick={handleOpenClientList}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-500/10 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-500/20 transition-colors text-sm font-medium"
+                  aria-label="Liste de clients"
+                  title="Liste de clients"
+                >
+                  <UsersIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Liste de clients</span>
+                </button>
+                <button
+                  onClick={() => setShowCreateClient(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-400 hover:bg-primary-500/20 transition-colors text-sm font-medium"
+                  aria-label="Créer Client"
+                  title="Créer Client"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Nouveau Client</span>
+                </button>
+              </>
             )}
 
             {/* Icône Avis (gérant uniquement) */}
@@ -293,7 +323,7 @@ export function DashboardLayout() {
                 )}
               </button>
             )}
-            
+
             <div className="relative" ref={settingsRef}>
               <button
                 ref={settingsBtnRef}
@@ -364,24 +394,24 @@ export function DashboardLayout() {
       {/* Create Client Modal */}
       <Modal isOpen={showCreateClient} onClose={() => setShowCreateClient(false)} title="Nouveau client" size="md">
         <div className="space-y-4">
-          <GlassInput 
-            label="Nom complet *" 
-            placeholder="Ex: Jean Dupont" 
-            value={newClient.nom} 
-            onChange={(e) => setNewClient({...newClient, nom: e.target.value})} 
+          <GlassInput
+            label="Nom complet *"
+            placeholder="Ex: Jean Dupont"
+            value={newClient.nom}
+            onChange={(e) => setNewClient({ ...newClient, nom: e.target.value })}
           />
-          <GlassInput 
-            label="Téléphone ou Email *" 
-            placeholder="Ex: 082444555 ou client@example.com" 
-            value={newClient.telephone} 
-            onChange={(e) => handleCreatePhoneChange(e.target.value)} 
+          <GlassInput
+            label="Téléphone ou Email *"
+            placeholder="Ex: 082444555 ou client@example.com"
+            value={newClient.telephone}
+            onChange={(e) => handleCreatePhoneChange(e.target.value)}
           />
-          <GlassInput 
-            label="Mot de passe *" 
-            type="text" 
-            placeholder="Saisir ou modifier le mot de passe" 
-            value={newClient.password} 
-            onChange={(e) => setNewClient({...newClient, password: e.target.value})} 
+          <GlassInput
+            label="Mot de passe *"
+            type="text"
+            placeholder="Saisir ou modifier le mot de passe"
+            value={newClient.password}
+            onChange={(e) => setNewClient({ ...newClient, password: e.target.value })}
           />
           <GlassButton
             variant="primary"
@@ -390,6 +420,48 @@ export function DashboardLayout() {
           >
             Enregistrer le client
           </GlassButton>
+        </div>
+      </Modal>
+
+      {/* Client List Modal */}
+      <Modal isOpen={showClientList} onClose={() => setShowClientList(false)} title="Liste des clients" size="lg">
+        <div className="space-y-4">
+          <div className="relative">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+            <input
+              type="text"
+              placeholder="Rechercher un client..."
+              value={clientSearch}
+              onChange={(e) => setClientSearch(e.target.value)}
+              className="glass-input w-full pl-10 py-2 text-sm"
+            />
+          </div>
+          
+          <div className="max-h-[60vh] overflow-y-auto glass-scrollbar space-y-2">
+            {loadingClients ? (
+              <div className="flex justify-center py-8 text-primary-500"><span className="animate-pulse">Chargement...</span></div>
+            ) : (
+              clientList
+                .filter(c => c.nom.toLowerCase().includes(clientSearch.toLowerCase()) || c.telephone.includes(clientSearch))
+                .map(client => (
+                  <div key={client.id} className="flex items-center justify-between p-3 rounded-xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white font-bold text-sm">
+                        {client.nom.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{client.nom}</p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{client.telephone}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+            )}
+            
+            {!loadingClients && clientList.length === 0 && (
+              <p className="text-center text-sm text-neutral-500 py-8">Aucun client trouvé.</p>
+            )}
+          </div>
         </div>
       </Modal>
 

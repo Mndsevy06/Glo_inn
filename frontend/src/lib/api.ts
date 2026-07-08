@@ -219,6 +219,7 @@ export const ordersApi = {
 // ─── Client ──────────────────────────────────────────────────────────────────
 export const clientApi = {
   getOrders: () => request<any[]>('/client/orders'),
+  deleteOrder: (id: string) => request<any>(`/client/orders/${id}`, { method: 'DELETE' }),
   getNotifications: () => request<any[]>('/client/notifications'),
   markNotificationRead: (id: string) => request<any>(`/client/notifications/${id}/read`, { method: 'PATCH' }),
 };

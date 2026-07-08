@@ -6,6 +6,145 @@ datasource db {
   provider = "postgresql"
 }
 
+model Utilisateur {
+  id               String         @id @default(uuid()) @db.Uuid
+  nom              String
+  telephone        String
+  adresse          String?
+  role             Role
+  username         String         @unique
+  password         String
+  actif            Boolean        @default(true)
+  createdAt        DateTime       @default(now()) @map("created_at")
+  currency         String         @default("CDF")
+  theme            String         @default("light")
+  avis             Avis[]         @relation("ClientAvis")
+  commandes        Commande[]     @relation("ClientCommandes")
+  commandes_gerees Commande[]     @relation("ReceptionnisteCommandes")
+  notifications    Notification[]
+
+  @@map("utilisateurs")
+}
+
+model Configuration {
+  id           String   @id @default("global")
+  taux_echange Decimal  @default(2800) @db.Decimal(10, 2)
+  updatedAt    DateTime @updatedAt
+
+  @@map("configurations")
+}
+
+model Service {
+  id                 String          @id @default(uuid()) @db.Uuid
+  libelle            String
+  description        String?
+  image              String?
+  tarif_unitaire     Decimal         @db.Decimal(10, 2)
+  categorie          String
+  actif              Boolean         @default(true)
+  express_disponible Boolean         @default(false)
+  tarif_express      Decimal?        @db.Decimal(10, 2)
+  createdAt          DateTime        @default(now()) @map("created_at")
+  lignes_commande    LigneCommande[]
+
+  @@map("services")
+}
+
+model Commande {
+  id                  String          @id @default(uuid()) @db.Uuid
+  id_client           String          @db.Uuid
+  id_receptionniste   String?         @db.Uuid
+  date_reception      DateTime        @default(now())
+  date_retrait_prevue DateTime        @db.Date
+  etat                EtatCommande    @default(depose)
+  montant_total       Decimal         @db.Decimal(10, 2)
+  statut_paiement     StatutPaiement  @default(Non_payee)
+  avis                Avis?
+  client              Utilisateur     @relation("ClientCommandes", fields: [id_client], references: [id])
+  receptionniste      Utilisateur?    @relation("ReceptionnisteCommandes", fields: [id_receptionniste], references: [id])
+  facture             Facture?
+  lignes              LigneCommande[]
+  notifications       Notification[]
+  client_deleted      Boolean         @default(false)
+
+  @@map("commandes")
+}
+
+model LigneCommande {
+  id               String      @id @default(uuid()) @db.Uuid
+  id_commande      String      @db.Uuid
+  id_service       String      @db.Uuid
+  quantite         Int
+  type_service     TypeService @default(Normal)
+  note_etat        String?
+  sous_total       Decimal     @db.Decimal(10, 2)
+  quantite_retiree Int         @default(0)
+  commande         Commande    @relation(fields: [id_commande], references: [id], onDelete: Cascade)
+  service          Service     @relation(fields: [id_service], references: [id])
+
+  @@map("lignes_commande")
+}
+
+model Facture {
+  id              String         @id @default(uuid()) @db.Uuid
+  id_commande     String         @unique @db.Uuid
+  numero          String         @unique
+  qr_code         String?
+  date_emission   DateTime       @default(now())
+  montant_total   Decimal        @db.Decimal(10, 2)
+  statut_paiement StatutPaiement @default(Non_payee)
+  commande        Commande       @relation(fields: [id_commande], references: [id])
+  paiements       Paiement[]
+
+  @@map("factures")
+}
+
+model Paiement {
+  id                  String       @id @default(uuid()) @db.Uuid
+  id_facture          String       @db.Uuid
+  montant             Decimal      @db.Decimal(10, 2)
+  mode_paiement       ModePaiement
+  date_paiement       DateTime     @default(now())
+  netikash_link       String?
+  netikash_request_id String?      @unique
+  netikash_status     String?
+  netikash_trans      String?
+  operateur           String?
+  pawapay_deposit_id  String?      @unique
+  pawapay_status      String?
+  telephone_client    String?
+  facture             Facture      @relation(fields: [id_facture], references: [id], onDelete: Cascade)
+
+  @@map("paiements")
+}
+
+model Notification {
+  id             String      @id @default(uuid()) @db.Uuid
+  id_utilisateur String      @db.Uuid
+  message        String
+  lue            Boolean     @default(false)
+  date_envoi     DateTime    @default(now())
+  id_commande    String?     @db.Uuid
+  commande       Commande?   @relation(fields: [id_commande], references: [id], onDelete: Cascade)
+  utilisateur    Utilisateur @relation(fields: [id_utilisateur], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Avis {
+  id          String      @id @default(uuid()) @db.Uuid
+  id_commande String      @unique @db.Uuid
+  id_client   String      @db.Uuid
+  note        Int
+  commentaire String?
+  lu          Boolean     @default(false)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  client      Utilisateur @relation("ClientAvis", fields: [id_client], references: [id], onDelete: Cascade)
+  commande    Commande    @relation(fields: [id_commande], references: [id], onDelete: Cascade)
+
+  @@map("avis")
+}
+
 enum Role {
   client
   receptionniste
@@ -13,12 +152,12 @@ enum Role {
 }
 
 enum EtatCommande {
-  en_attente
   depose
   en_cours
   pret
-  retrait_partiel
   retire
+  en_attente
+  retrait_partiel
   annule
 }
 
@@ -36,144 +175,4 @@ enum ModePaiement {
   Cash
   PawaPay
   Netikash
-}
-
-model Utilisateur {
-  id               String         @id @default(uuid()) @db.Uuid
-  nom              String
-  telephone        String
-  adresse          String?
-  role             Role
-  username         String         @unique
-  password         String
-  actif            Boolean        @default(true)
-  createdAt        DateTime       @default(now()) @map("created_at")
-  commandes        Commande[]     @relation("ClientCommandes")
-  commandes_gerees Commande[]     @relation("ReceptionnisteCommandes")
-  notifications    Notification[]
-  theme            String         @default("light")
-  currency         String         @default("CDF")
-  avis             Avis[]         @relation("ClientAvis")
-
-  @@map("utilisateurs")
-}
-
-model Configuration {
-  id           String   @id @default("global")
-  taux_echange Decimal  @default(2800) @db.Decimal(10, 2)
-  updatedAt    DateTime @updatedAt
-
-  @@map("configurations")
-}
-
-model Service {
-  id                 String          @id @default(uuid()) @db.Uuid
-  libelle            String
-  description        String?         @db.Text
-  image              String?
-  tarif_unitaire     Decimal         @db.Decimal(10, 2)
-  categorie          String
-  actif              Boolean         @default(true)
-  express_disponible Boolean         @default(false)
-  tarif_express      Decimal?        @db.Decimal(10, 2)
-  lignes_commande    LigneCommande[]
-
-  @@map("services")
-}
-
-model Commande {
-  id                  String          @id @default(uuid()) @db.Uuid
-  id_client           String          @db.Uuid
-  client              Utilisateur     @relation("ClientCommandes", fields: [id_client], references: [id])
-  id_receptionniste   String?         @db.Uuid
-  receptionniste      Utilisateur?    @relation("ReceptionnisteCommandes", fields: [id_receptionniste], references: [id])
-  date_reception      DateTime        @default(now())
-  date_retrait_prevue DateTime        @db.Date
-  etat                EtatCommande    @default(depose)
-  montant_total       Decimal         @db.Decimal(10, 2)
-  statut_paiement     StatutPaiement  @default(Non_payee)
-  lignes              LigneCommande[]
-  facture             Facture?
-  notifications       Notification[]
-  avis                Avis?
-
-  @@map("commandes")
-}
-
-model LigneCommande {
-  id           String      @id @default(uuid()) @db.Uuid
-  id_commande  String      @db.Uuid
-  commande     Commande    @relation(fields: [id_commande], references: [id], onDelete: Cascade)
-  id_service   String      @db.Uuid
-  service      Service     @relation(fields: [id_service], references: [id])
-  quantite     Int
-  quantite_retiree Int     @default(0)
-  type_service TypeService @default(Normal)
-  note_etat    String?     @db.Text
-  sous_total   Decimal     @db.Decimal(10, 2)
-
-  @@map("lignes_commande")
-}
-
-model Facture {
-  id              String         @id @default(uuid()) @db.Uuid
-  id_commande     String         @unique @db.Uuid
-  commande        Commande       @relation(fields: [id_commande], references: [id])
-  numero          String         @unique
-  qr_code         String?
-  date_emission   DateTime       @default(now())
-  montant_total   Decimal        @db.Decimal(10, 2)
-  statut_paiement StatutPaiement @default(Non_payee)
-  paiements       Paiement[]
-
-  @@map("factures")
-}
-
-model Paiement {
-  id                 String              @id @default(uuid()) @db.Uuid
-  id_facture         String              @db.Uuid
-  facture            Facture             @relation(fields: [id_facture], references: [id], onDelete: Cascade)
-  montant            Decimal             @db.Decimal(10, 2)
-  mode_paiement      ModePaiement
-  // PawaPay fields (legacy)
-  pawapay_deposit_id String?             @unique
-  pawapay_status     String?
-  // Netikash fields
-  netikash_trans     String?             // Transaction code returned by Netikash
-  netikash_request_id String?            @unique  // Request ID (last segment of link URL)
-  netikash_status    String?             // requested | approved | completed | failed | expired | locked | canceled
-  netikash_link      String?             // Payment link for client redirect
-  // Common fields
-  telephone_client   String?
-  operateur          String?
-  date_paiement      DateTime            @default(now())
-
-  @@map("paiements")
-}
-
-model Notification {
-  id             String      @id @default(uuid()) @db.Uuid
-  id_utilisateur String      @db.Uuid
-  utilisateur    Utilisateur @relation(fields: [id_utilisateur], references: [id], onDelete: Cascade)
-  message        String      @db.Text
-  lue            Boolean     @default(false)
-  date_envoi     DateTime    @default(now())
-  id_commande    String?     @db.Uuid
-  commande       Commande?   @relation(fields: [id_commande], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
-}
-
-model Avis {
-  id             String      @id @default(uuid()) @db.Uuid
-  id_commande    String      @unique @db.Uuid
-  commande       Commande    @relation(fields: [id_commande], references: [id], onDelete: Cascade)
-  id_client      String      @db.Uuid
-  client         Utilisateur @relation("ClientAvis", fields: [id_client], references: [id], onDelete: Cascade)
-  note           Int         
-  commentaire    String?     @db.Text
-  lu             Boolean     @default(false)
-  createdAt      DateTime    @default(now()) @map("created_at")
-
-  @@map("avis")
 }

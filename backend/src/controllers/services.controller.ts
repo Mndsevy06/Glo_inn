@@ -8,7 +8,7 @@ export const getServices = async (req: Request, res: Response): Promise<void> =>
   try {
     const services = await prisma.service.findMany({
       where: { actif: true },
-      orderBy: { categorie: 'asc' },
+      orderBy: { createdAt: 'desc' },
     });
     res.status(200).json(services);
   } catch (error) {
@@ -21,7 +21,7 @@ export const getServices = async (req: Request, res: Response): Promise<void> =>
 export const getAllServicesAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
     const services = await prisma.service.findMany({
-      orderBy: { categorie: 'asc' },
+      orderBy: { createdAt: 'desc' },
     });
     res.status(200).json(services);
   } catch (error) {

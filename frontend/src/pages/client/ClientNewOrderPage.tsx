@@ -150,78 +150,80 @@ export function ClientNewOrderPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-col-reverse lg:flex-row">
         
         {/* Right: Cart (Sticky Sidebar) shown first on mobile if it has items? No, better keep order: Services then Cart, but in mobile we might want cart at bottom or top. Let's put cart at top on mobile if not empty, otherwise bottom */}
-        <div className={`lg:col-span-5 space-y-4 ${cart.length > 0 ? 'order-first lg:order-last' : 'order-last lg:order-last'}`}>
-          <GlassCard className="sticky top-6 border-2 border-primary-500/10 shadow-xl shadow-primary-500/5" hover={false}>
-            <div className="p-4 border-b border-white/20 dark:border-white/10">
-              <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4" />
-                Votre Panier ({cart.length})
-              </h3>
-            </div>
-            <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto">
-              {cart.length === 0 ? (
-                <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 py-8">Votre panier est vide</p>
-              ) : (
-                cart.map((item) => (
-                  <div key={item.id} className="glass-panel p-3 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{item.service.libelle}</p>
-                      </div>
-                      <button onClick={() => removeItem(item.id)} className="p-1 rounded hover:bg-error-500/10" title="Supprimer l'article" aria-label="Supprimer l'article">
-                        <X className="w-4 h-4 text-error-500" />
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2 justify-between">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => updateQty(item.id, -1)} className="w-7 h-7 rounded-lg bg-white/50 dark:bg-white/10 flex items-center justify-center hover:bg-white/70" title="Diminuer la quantité" aria-label="Diminuer la quantité">
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="text-sm font-medium w-6 text-center">{item.quantite}</span>
-                        <button onClick={() => updateQty(item.id, 1)} className="w-7 h-7 rounded-lg bg-white/50 dark:bg-white/10 flex items-center justify-center hover:bg-white/70" title="Augmenter la quantité" aria-label="Augmenter la quantité">
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-                      <button
-                        onClick={() => toggleType(item.id)}
-                        className={`text-xs px-2 py-1 rounded-lg border ${
-                          item.type === 'Express'
-                            ? 'bg-warning-500/10 text-warning-600 border-warning-500/20'
-                            : 'bg-neutral-100/50 text-neutral-600 border-neutral-300/30 dark:bg-neutral-800/50 dark:text-neutral-400 dark:border-neutral-700/30'
-                        }`}
-                      >
-                        {item.type === 'Express' ? 'Express' : 'Normal'}
-                      </button>
-                    </div>
-                    <div className="text-right text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                      {formatCurrency(
-                        (item.type === 'Express' && item.service.tarif_express ? Number(item.service.tarif_express) : Number(item.service.tarif_unitaire)) * item.quantite
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            {cart.length > 0 && (
-              <div className="p-4 space-y-4 rounded-b-2xl bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-800 dark:to-neutral-900 border-t border-neutral-200 dark:border-neutral-700">
-                <div className="flex items-center justify-between bg-white dark:bg-neutral-800 p-3 rounded-xl shadow-sm border border-neutral-100 dark:border-neutral-700">
-                  <span className="text-sm font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">Total</span>
-                  <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-400">{formatCurrency(total)}</span>
-                </div>
-                <button
-                  className={`w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                    isSubmitting
-                      ? 'bg-neutral-400 cursor-not-allowed opacity-70'
-                      : 'bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600'
-                  }`}
-                  onClick={handleGenerateOrder}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Validation...' : 'Valider la commande'}
-                </button>
+        <div className={`lg:col-span-5 h-full relative ${cart.length > 0 ? 'order-first lg:order-last' : 'order-last lg:order-last'}`}>
+          <div className="sticky top-24 space-y-4">
+            <GlassCard className="border-2 border-primary-500/10 shadow-xl shadow-primary-500/5" hover={false}>
+              <div className="p-4 border-b border-white/20 dark:border-white/10">
+                <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                  <ShoppingCart className="w-4 h-4" />
+                  Votre Panier ({cart.length})
+                </h3>
               </div>
-            )}
-          </GlassCard>
+              <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto">
+                {cart.length === 0 ? (
+                  <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 py-8">Votre panier est vide</p>
+                ) : (
+                  cart.map((item) => (
+                    <div key={item.id} className="glass-panel p-3 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{item.service.libelle}</p>
+                        </div>
+                        <button onClick={() => removeItem(item.id)} className="p-1 rounded hover:bg-error-500/10" title="Supprimer l'article" aria-label="Supprimer l'article">
+                          <X className="w-4 h-4 text-error-500" />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2 justify-between">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => updateQty(item.id, -1)} className="w-7 h-7 rounded-lg bg-white/50 dark:bg-white/10 flex items-center justify-center hover:bg-white/70" title="Diminuer la quantité" aria-label="Diminuer la quantité">
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="text-sm font-medium w-6 text-center">{item.quantite}</span>
+                          <button onClick={() => updateQty(item.id, 1)} className="w-7 h-7 rounded-lg bg-white/50 dark:bg-white/10 flex items-center justify-center hover:bg-white/70" title="Augmenter la quantité" aria-label="Augmenter la quantité">
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => toggleType(item.id)}
+                          className={`text-xs px-2 py-1 rounded-lg border ${
+                            item.type === 'Express'
+                              ? 'bg-warning-500/10 text-warning-600 border-warning-500/20'
+                              : 'bg-neutral-100/50 text-neutral-600 border-neutral-300/30 dark:bg-neutral-800/50 dark:text-neutral-400 dark:border-neutral-700/30'
+                          }`}
+                        >
+                          {item.type === 'Express' ? 'Express' : 'Normal'}
+                        </button>
+                      </div>
+                      <div className="text-right text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                        {formatCurrency(
+                          (item.type === 'Express' && item.service.tarif_express ? Number(item.service.tarif_express) : Number(item.service.tarif_unitaire)) * item.quantite
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              {cart.length > 0 && (
+                <div className="p-4 space-y-4 rounded-b-2xl bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-800 dark:to-neutral-900 border-t border-neutral-200 dark:border-neutral-700">
+                  <div className="flex items-center justify-between bg-white dark:bg-neutral-800 p-3 rounded-xl shadow-sm border border-neutral-100 dark:border-neutral-700">
+                    <span className="text-sm font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">Total</span>
+                    <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-400">{formatCurrency(total)}</span>
+                  </div>
+                  <button
+                    className={`w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                      isSubmitting
+                        ? 'bg-neutral-400 cursor-not-allowed opacity-70'
+                        : 'bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600'
+                    }`}
+                    onClick={handleGenerateOrder}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Validation...' : 'Valider la commande'}
+                  </button>
+                </div>
+              )}
+            </GlassCard>
+          </div>
         </div>
 
         {/* Left: Services Grid */}

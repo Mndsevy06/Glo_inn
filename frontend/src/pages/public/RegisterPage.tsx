@@ -22,7 +22,7 @@ export function RegisterPage() {
   const handleCreatePhoneChange = (val: string) => {
     setFormData(prev => {
       const digitsOnly = val.replace(/[^0-9]/g, '');
-      const defaultPass = digitsOnly.length >= 6 ? digitsOnly.slice(-6) : '123456';
+      const defaultPass = digitsOnly.length >= 6 ? digitsOnly.slice(-6) : '';
       return {
         ...prev,
         telephone: val,
@@ -39,7 +39,7 @@ export function RegisterPage() {
       return;
     }
     setLoading(true);
-    
+
     const cleanedName = formData.nom.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
     const suffix = formData.telephone.replace(/[^0-9]/g, '').slice(-4) || Math.random().toString(36).slice(2, 6);
     const generatedUsername = `c_${cleanedName}_${suffix}`;
@@ -50,9 +50,9 @@ export function RegisterPage() {
       username: generatedUsername,
       password: formData.password
     };
-    
+
     const result = await register(payload);
-    
+
     if (result.success) {
       addToast('Inscription réussie !', 'success');
       navigate('/client');
@@ -75,7 +75,7 @@ export function RegisterPage() {
         transition={{ duration: 0.5, ease: 'easeOut' }}
         className="relative z-10 w-full max-w-md mx-4"
       >
-        <button 
+        <button
           onClick={() => navigate('/')}
           className="absolute -top-12 left-0 flex items-center gap-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors bg-white/10 dark:bg-black/10 px-3 py-1.5 rounded-full backdrop-blur-sm"
         >
@@ -136,10 +136,10 @@ export function RegisterPage() {
             >
               {loading ? 'Inscription...' : 'S\'inscrire'}
             </GlassButton>
-            
+
             <div className="text-center mt-4 text-sm text-neutral-600 dark:text-neutral-400">
               Déjà un compte ?{' '}
-              <button 
+              <button
                 onClick={() => navigate('/login')}
                 className="text-primary-600 dark:text-primary-400 font-medium hover:underline"
               >

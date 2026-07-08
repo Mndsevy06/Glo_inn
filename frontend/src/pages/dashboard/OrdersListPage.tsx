@@ -96,6 +96,9 @@ export function OrdersListPage() {
 
   const handleSendReminder = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!window.confirm("Voulez-vous vraiment envoyer une notification de rappel à ce client ?")) {
+      return;
+    }
     try {
       await ordersApi.sendReminder(id);
       addToast('Rappel envoyé au client', 'success');

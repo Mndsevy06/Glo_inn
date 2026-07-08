@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMyOrders, getMyNotifications, markNotificationRead } from '../controllers/client.controller';
+import { getMyOrders, getMyNotifications, markNotificationRead, deleteMyOrder } from '../controllers/client.controller';
 import { verifyToken, verifyRole } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -9,6 +9,9 @@ router.use(verifyRole(['client'])); // Only clients can access these routes
 
 // GET /api/client/orders
 router.get('/orders', getMyOrders);
+
+// DELETE /api/client/orders/:id
+router.delete('/orders/:id', deleteMyOrder);
 
 // GET /api/client/notifications
 router.get('/notifications', getMyNotifications);

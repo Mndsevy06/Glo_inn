@@ -95,7 +95,7 @@ export function UsersPage() {
   const handleToggleActions = (userId: string, e: React.MouseEvent<HTMLButtonElement>) => {
     // Prevent event propagation so the click doesn't bubble up to window and immediately close the menu
     e.stopPropagation();
-    
+
     if (activeActionsUserId === userId) {
       setActiveActionsUserId(null);
       setDropdownPos(null);
@@ -197,7 +197,7 @@ export function UsersPage() {
       telephone: '',
       adresse: '',
       username: '',
-      password: '123456'
+      password: ''
     });
     setShowAddMenu(false);
     setShowCreateModal(true);
@@ -765,8 +765,8 @@ export function UsersPage() {
             onChange={(e) => setNewUser({ ...newUser, nom: e.target.value })}
           />
           <GlassInput
-            label="Téléphone ou Email *"
-            placeholder="Ex: 082444555 ou client@example.com"
+            label=" Email *"
+            placeholder="Ex:  client@example.com"
             value={newUser.telephone}
             onChange={(e) => handleCreatePhoneChange(e.target.value)}
           />

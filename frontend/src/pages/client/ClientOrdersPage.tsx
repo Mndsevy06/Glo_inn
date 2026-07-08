@@ -7,7 +7,7 @@ import { formatDate, formatCurrency, viewInvoice } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, Clock, CheckCircle, CreditCard, ChevronRight,
-  Smartphone, X, Loader2, CheckCircle2, AlertCircle, Wifi, Star, MessageSquare, FileText
+  Smartphone, X, Loader2, CheckCircle2, AlertCircle, Wifi, Star, MessageSquare, FileText, Trash2
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useSocket } from '@/context/SocketContext';
@@ -410,6 +410,7 @@ export function ClientOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [payingOrder, setPayingOrder] = useState<any | null>(null);
   const [avisOrder, setAvisOrder] = useState<any | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchOrders = async () => {
@@ -420,6 +421,23 @@ export function ClientOrdersPage() {
       console.error('Error fetching orders', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!window.confirm('Voulez-vous vraiment supprimer cette commande de votre historique ?')) return;
+    
+    setDeletingId(id);
+    try {
+      await clientApi.deleteOrder(id);
+      addToast('Commande supprimée de votre historique.', 'success');
+      setOrders(orders.filter(o => o.id !== id));
+      if (selectedOrder === id) setSelectedOrder(null);
+    } catch (error: any) {
+      addToast(error.message || 'Erreur lors de la suppression.', 'error');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -502,6 +520,16 @@ export function ClientOrdersPage() {
                           >
                             <FileText className="w-3.5 h-3.5" />
                             Facture
+                          </button>
+                        )}
+                        {order.etat === 'retire' && (
+                          <button
+                            onClick={(e) => handleDelete(e, order.id)}
+                            disabled={deletingId === order.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-error-50 dark:bg-error-500/10 hover:bg-error-100 dark:hover:bg-error-500/20 text-error-600 dark:text-error-400 transition-colors text-xs font-medium"
+                            title="Supprimer la commande"
+                          >
+                            {deletingId === order.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                           </button>
                         )}
                         <ChevronRight className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${isSelected ? 'rotate-90' : ''}`} />
